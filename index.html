@@ -4398,6 +4398,8 @@ const DIAGRAM_INDEX = [
     { title: "Abdominal Pain by Region", desc: "Nine-region differential map", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-0", tabId: "appendix", icon: "\ud83e\udded", color: "#f59e0b" },
     { title: "Appendicitis Differential by Age", desc: "Children, adult, female, elderly", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-1b", tabId: "appendix", icon: "\ud83d\udc65", color: "#ec4899" },
     { title: "AAST Appendicitis Grades", desc: "Operative grading, normal to V", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-1", tabId: "appendix", icon: "\ud83d\udcca", color: "#ef4444" },
+    { title: "Appendix Blood Supply", desc: "Aorta to mesoappendix", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-a0", tabId: "appendix", icon: "\ud83e\ude78", color: "#ef4444" },
+    { title: "Appendix Tip Positions", desc: "Retrocaecal, pelvic and others", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-a0", tabId: "appendix", icon: "\ud83d\udccd", color: "#f97316" },
     { title: "Alvarado Score", desc: "Appendicitis probability", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-0", tabId: "appendix", icon: "\ud83e\uddfe", color: "#38bdf8" },
     { title: "Colorectal Cancer Staging", desc: "Dukes and TNM with survival", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-4", tabId: "colon", icon: "\ud83c\udf97\ufe0f", color: "#38bdf8" },
     { title: "Haemorrhoid Grades", desc: "Goligher I\u2013IV and treatment ladder", topicId: "surg2_gisurgery", moduleId: "Surg2_gi_colorectal", cardId: "card-0", tabId: "anorectal", icon: "\ud83c\udf47", color: "#38bdf8" },
@@ -16911,6 +16913,9 @@ function _LB_Reading({ rd, col }) {
             h("div", { style: { display: "flex", flexWrap: "wrap", gap: 5 } }, rd.ddx.map((d, i) => h("button", { key: i, onClick: () => setO(o === i ? -1 : i), className: "lbT", style: { background: o === i ? col + "33" : "#111827", border: `1px solid ${o === i ? col : "#263449"}`, color: o === i ? "#fff" : "#cbd5e1", borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" } }, d[0]))),
             o >= 0 && rd.ddx[o] && h("div", { key: o, className: "lbIn", style: { marginTop: 7, fontSize: 11.5, color: "#e2e8f0", lineHeight: 1.6, borderLeft: `3px solid ${col}`, padding: "2px 0 2px 9px" } }, rd.ddx[o][1])));
 }
+/* haptic tick while dragging a lab slider (short pulse per step, stronger when crossing the normal-range boundary) */
+let _LB_hapT = 0;
+function _LB_tick(ms) { try { const t = Date.now(); if (t - _LB_hapT < 28) return; _LB_hapT = t; if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { } }
 /* horizontal gauge. P: label, unit, min,max,step,dec, lo,hi, v, onChange, lowT/highT [[at,name]], pre [[label,value]], read(state,tier) -> {title,why,ddx} */
 function _LB_Gauge(P) {
     const h = React.createElement, ref = React.useRef(null), idr = React.useRef(Math.random().toString(36).slice(2, 7)), id = idr.current;
@@ -16921,7 +16926,7 @@ function _LB_Gauge(P) {
     const sev = state === "low" ? (W.A - f) / W.A : state === "high" ? (f - W.B) / (1 - W.B) : 0, sv = Math.max(0, Math.min(1, sev));
     const col = _LB_rgb(_LB_spec(cf)), vcls = sv > 0.78 ? "lbV3" : sv > 0.5 ? "lbV2" : sv > 0.18 ? "lbV1" : "";
     let tier = "Normal"; if (state === "low") { const z = W0.zones.filter(z => z.side === "low"); const fp = W0.pos(P.v); const zz = z.find(q => fp >= q.a - 1e-6 && fp <= q.b + 1e-6); tier = zz ? zz.name : "Low"; } else if (state === "high") { const z = W0.zones.filter(z => z.side === "high"); const fp = W0.pos(P.v); const zz = z.find(q => fp >= q.a - 1e-6 && fp <= q.b + 1e-6); tier = zz ? zz.name : "High"; }
-    const set = nv => P.onChange(Math.max(P.min, Math.min(P.max, Number((Math.round(nv / P.step) * P.step).toFixed(4)))));
+    const set = nv => { const q = Math.max(P.min, Math.min(P.max, Number((Math.round(nv / P.step) * P.step).toFixed(4)))); if (q !== P.v) { const sg = x => x < P.lo ? -1 : x > P.hi ? 1 : 0; _LB_tick(sg(q) !== sg(P.v) ? 18 : 5); } P.onChange(q); };
     const fromEvt = e => { const r = ref.current.getBoundingClientRect(); set(W0.val(((e.clientX - r.left) / r.width * 340 - 12) / 316)); };
     let grad = ""; for (let i = 0; i <= 24; i++) grad += `<stop offset="${(i / 24 * 100).toFixed(1)}%" stop-color="${_LB_rgb(_LB_spec(P.invert ? 1 - i / 24 : i / 24))}"/>`;
     const edge = state === "high" ? W.B : state === "low" ? W.A : f, x1 = X(Math.min(edge, f)), x2 = X(Math.max(edge, f));
@@ -16933,7 +16938,7 @@ function _LB_Gauge(P) {
 <rect x="12" y="36" width="316" height="26" rx="9" fill="#0b1018"/><g clip-path="url(#c${id})"><rect x="12" y="36" width="316" height="26" fill="url(#g${id})" opacity=".42"/><rect x="${x1.toFixed(1)}" y="36" width="${Math.max(0, x2 - x1).toFixed(1)}" height="26" fill="url(#g${id})" opacity=".98"/><g>${zonesSvg}</g><rect x="0" y="36" width="90" height="26" fill="url(#s${id})" style="animation:lbSheen ${(3.4 - 1.6 * sv).toFixed(1)}s linear infinite"/></g>
 <rect x="12" y="36" width="316" height="26" rx="9" fill="none" stroke="${col}" stroke-opacity=".6"/>
 <rect x="${X(W.A).toFixed(1)}" y="34" width="${(X(W.B) - X(W.A)).toFixed(1)}" height="30" rx="5" fill="none" stroke="#4ade80" stroke-opacity=".75" stroke-dasharray="3 3"/>${ticks}
-<g class="${vcls}"><circle cx="${tx.toFixed(1)}" cy="49" r="17" fill="${col}" opacity=".5" filter="url(#b${id})" style="animation:lbGlow ${dur}s ease-in-out infinite"/><circle cx="${tx.toFixed(1)}" cy="49" r="8" fill="none" stroke="${col}" stroke-width="1.6"><animate attributeName="r" values="8;21" dur="${dur}s" repeatCount="indefinite"/><animate attributeName="opacity" values=".85;0" dur="${dur}s" repeatCount="indefinite"/></circle>
+<g>
 <line x1="${tx.toFixed(1)}" y1="26" x2="${tx.toFixed(1)}" y2="72" stroke="#fff" stroke-width="2"/><circle cx="${tx.toFixed(1)}" cy="49" r="8" fill="${col}" stroke="#fff" stroke-width="2.2"/><circle cx="${(tx - 2).toFixed(1)}" cy="47" r="2.4" fill="#fff" opacity=".7"/>
 <rect x="${(tx - bw / 2).toFixed(1)}" y="3" width="${bw}" height="17" rx="7" fill="#0b1018" stroke="${col}" stroke-width="1.4"/><text x="${tx.toFixed(1)}" y="15" text-anchor="middle" font-size="10" font-weight="800" fill="${col}" font-family="monospace">${bub}</text></g></svg>`;
     const stateTxt = state === "ok" ? "✓ NORMAL" : tier.toUpperCase() + (state === "low" ? " ↓" : " ↑");
@@ -16957,7 +16962,7 @@ function _LB_Fader(P) {
     const Y = ff => H - 12 - ff * (H - 24);
     const state = P.v < P.lo ? "low" : P.v > P.hi ? "high" : "ok", sev = state === "low" ? (W.A - f) / W.A : state === "high" ? (f - W.B) / (1 - W.B) : 0, sv = Math.max(0, Math.min(1, sev));
     const col = _LB_rgb(_LB_spec(f)), vcls = sv > 0.78 ? "lbV3" : sv > 0.5 ? "lbV2" : sv > 0.18 ? "lbV1" : "";
-    const set = nv => P.onChange(Math.max(P.min, Math.min(P.max, Number((Math.round(nv / P.step) * P.step).toFixed(4)))));
+    const set = nv => { const q = Math.max(P.min, Math.min(P.max, Number((Math.round(nv / P.step) * P.step).toFixed(4)))); if (q !== P.v) { const sg = x => x < P.lo ? -1 : x > P.hi ? 1 : 0; _LB_tick(sg(q) !== sg(P.v) ? 18 : 5); } P.onChange(q); };
     const fromEvt = e => { const r = ref.current.getBoundingClientRect(); set(W.val(1 - (((e.clientY - r.top) / r.height * H) - 12) / (H - 24))); };
     let grad = ""; for (let i = 0; i <= 20; i++) grad += `<stop offset="${(i / 20 * 100).toFixed(0)}%" stop-color="${_LB_rgb(_LB_spec(1 - i / 20))}"/>`;
     const edge = state === "high" ? W.B : state === "low" ? W.A : f, y1 = Y(Math.max(edge, f)), y2 = Y(Math.min(edge, f));
@@ -16965,7 +16970,7 @@ function _LB_Fader(P) {
     const svg = `<svg viewBox="0 0 54 ${H}" style="width:100%;height:auto;display:block;touch-action:none;overflow:visible"><defs><linearGradient id="g${id}" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="12" y2="${H - 12}">${grad}</linearGradient><clipPath id="c${id}"><rect x="19" y="12" width="16" height="${H - 24}" rx="7"/></clipPath><filter id="b${id}"><feGaussianBlur stdDeviation="3"/></filter></defs>
 <rect x="19" y="12" width="16" height="${H - 24}" rx="7" fill="#0b1018"/><g clip-path="url(#c${id})"><rect x="19" y="12" width="16" height="${H - 24}" fill="url(#g${id})" opacity=".4"/><rect x="19" y="${y1.toFixed(1)}" width="16" height="${Math.max(0, y2 - y1).toFixed(1)}" fill="url(#g${id})" opacity=".98"/></g>
 <rect x="17" y="${Y(W.B).toFixed(1)}" width="20" height="${(Y(W.A) - Y(W.B)).toFixed(1)}" rx="4" fill="none" stroke="#4ade80" stroke-opacity=".8" stroke-dasharray="3 3"/><rect x="19" y="12" width="16" height="${H - 24}" rx="7" fill="none" stroke="${col}" stroke-opacity=".55"/>
-<g class="${vcls}"><circle cx="27" cy="${ty.toFixed(1)}" r="14" fill="${col}" opacity=".5" filter="url(#b${id})" style="animation:lbGlow ${dur}s ease-in-out infinite"/><circle cx="27" cy="${ty.toFixed(1)}" r="7" fill="none" stroke="${col}" stroke-width="1.4"><animate attributeName="r" values="7;18" dur="${dur}s" repeatCount="indefinite"/><animate attributeName="opacity" values=".85;0" dur="${dur}s" repeatCount="indefinite"/></circle>
+<g>
 <rect x="9" y="${(ty - 6).toFixed(1)}" width="36" height="12" rx="5" fill="${col}" stroke="#fff" stroke-width="1.6"/><line x1="14" y1="${ty.toFixed(1)}" x2="40" y2="${ty.toFixed(1)}" stroke="#07090f" stroke-opacity=".55" stroke-width="1.4"/></g></svg>`;
     return h("div", { style: { textAlign: "center", flex: 1, minWidth: 0 } },
         h("div", { style: { fontSize: 9, color: _LB_C.mut, fontWeight: 800, letterSpacing: 1 } }, P.label),
@@ -43170,26 +43175,6 @@ RBC lifespan: 120 days. Removed by splenic macrophages (extravascular hemolysis,
             mnemonic: `🧠 "Pro-Baso-Poly-Ortho-Reti-RBC" = Please Be Polite Or Retards Be Cursed`
         },
         {
-            heading: "Intravascular vs Extravascular Hemolysis — Where the RBC Actually Dies",
-            content: `Both terms describe the SAME end result — a red cell destroyed before its normal 120-day lifespan — but WHERE the destruction happens determines an almost entirely different set of lab findings, and confusing the two leads straight to the wrong workup.
-
-EXTRAVASCULAR hemolysis (the default, ~90% of physiological turnover, and the dominant mechanism in most pathological hemolysis too — hereditary spherocytosis, warm AIHA, most hemoglobinopathies): the RBC is removed intact by splenic (and hepatic) macrophages, exactly as normal aged red cells are — the cell is recognised as abnormal (IgG-coated, rigid, or oddly shaped) and phagocytosed WHOLE. Because the red cell is broken down INSIDE the macrophage, none of its contents ever touch the plasma directly. Haemoglobin is degraded intracellularly to bilirubin (raising indirect/unconjugated bilirubin and urine urobilinogen) with NO free haemoglobin release into plasma or urine. Splenomegaly is common, since this is precisely the organ doing the extra work.
-
-INTRAVASCULAR hemolysis (the minority of physiological turnover, but the defining mechanism in MAHA/TTP/HUS/DIC, cold AIHA, PNH, G6PD deficiency crises, mismatched transfusion reactions, and mechanical heart valve haemolysis): the RBC membrane ruptures DIRECTLY within the bloodstream — from complement membrane-attack-complex perforation, mechanical shearing across fibrin strands, or osmotic/oxidative membrane failure. Because the cell contents spill straight into plasma, this releases FREE haemoglobin directly into the circulation — first mopped up by haptoglobin (which is why haptoglobin is characteristically LOW, sometimes undetectable, and is the single most sensitive marker of intravascular hemolysis specifically), then once haptoglobin's binding capacity is exceeded, free haemoglobin is filtered by the kidney, producing haemoglobinuria (dark red/brown urine, dipstick-positive for blood with NO red cells seen on microscopy — the classic trap) and, over days, haemosiderinuria as renal tubular cells reabsorb and store the excess iron before sloughing off. Splenomegaly is typically ABSENT or minimal, since the spleen is not the site of destruction.`,
-            mnemonic: `🧠 Extravascular = "Eaten by the spleen" — intact cell swallowed whole, no free Hb in plasma, splenomegaly expected, bilirubin/urobilinogen up.\n🧠 Intravascular = "Inside the vessel it bursts" — free Hb dumps into plasma, haptoglobin crashes, haemoglobinuria/haemosiderinuria appear, spleen usually normal size.\n🧠 The one lab that separates them fastest: LOW haptoglobin + haemoglobinuria = intravascular. Normal/mildly low haptoglobin + no haemoglobinuria + splenomegaly = extravascular.\n🧠 Classic intravascular causes: "MAHA-PIG" — MAHA (TTP/HUS/DIC), Autoimmune (cold AIHA/complement-fixing IgM), Hemolytic transfusion reaction, PNH, Infection (malaria, clostridial sepsis), G6PD crisis.`
-        },
-        {
-            heading: "Ineffective Erythropoiesis & Intramedullary Hemolysis — A Third Site of RBC Death",
-            content: `Extravascular and intravascular hemolysis both describe a red cell that made it out into the circulation as a mature (or near-mature) cell before being destroyed. Ineffective erythropoiesis is a different, earlier failure entirely — the developing erythroid precursor dies INSIDE the bone marrow, before it ever finishes maturing into a red cell capable of leaving. This is sometimes called "intramedullary hemolysis," a slightly loose but widely used label for the same phenomenon, because the destruction of the abnormal precursor happens within the marrow (medulla) by resident macrophages, mirroring the logic of extravascular hemolysis but one developmental step earlier.
-
-THE MECHANISM: normal erythropoiesis produces a large surplus of precursors, and a small fraction are always culled by marrow macrophages as routine quality control — this baseline "ineffective" fraction is physiological. In disease states, a defect in DNA synthesis, globin chain production, or membrane assembly causes an abnormally high proportion of precursors to be recognised as defective and phagocytosed in the marrow before ever being released as reticulocytes. The clinical result is a paradox that trips up almost every learner the first time they see it: the marrow is hypercellular and erythropoiesis looks "active" on biopsy, yet the peripheral blood shows anaemia with a reticulocyte count that is LOW or inappropriately normal — not the brisk reticulocytosis expected from a marrow working overtime. This mismatch (hypercellular marrow + poor peripheral output) is the single clinical fingerprint of ineffective erythropoiesis.
-
-WHY THE LABS LOOK "HEMOLYTIC" WITHOUT ANY MATURE CELL EVER RUPTURING: because so many precursors are broken down inside the marrow, haem is degraded to bilirubin at that site just as it would be in a splenic macrophage — producing unconjugated hyperbilirubinaemia, raised LDH (precursors are LDH-rich, so the LDH elevation here is often more marked than in ordinary extravascular hemolysis), and a low-to-borderline haptoglobin, all while the reticulocyte count fails to rise appropriately. This combination — "hemolytic" chemistry with a blunted reticulocyte response — is what separates ineffective erythropoiesis from ordinary peripheral hemolysis, where the marrow compensates and the reticulocyte count climbs.
-
-CLASSIC CAUSES: megaloblastic anaemia (B12/folate deficiency — impaired DNA synthesis leaves precursors too immature to survive, the prototypical example, sometimes producing dramatic LDH elevations that mimic haemolytic crisis), thalassaemia major and intermedia (excess unpaired globin chains precipitate and damage precursor membranes before release), sideroblastic anaemias and myelodysplastic syndromes (defective haem synthesis or dysplastic maturation), and congenital dyserythropoietic anaemias.`,
-            mnemonic: `🧠 Extravascular = mature cell eaten in the spleen. Intravascular = mature cell bursts in the vessel. Ineffective erythropoiesis (intramedullary hemolysis) = immature precursor dies in the marrow before it ever gets out — three sites, three mechanisms, one shared downstream chemistry (↑bilirubin, ↑LDH, ↓haptoglobin).\n🧠 The giveaway on labs: hypercellular marrow + anaemia + a retic count that is LOW or inappropriately normal (not high) = think ineffective erythropoiesis, not peripheral hemolysis.\n🧠 Classic causes — "MTS-C": Megaloblastic anaemia (B12/folate), Thalassaemia major/intermedia, Sideroblastic anaemia/MDS, Congenital dyserythropoietic anaemia.`
-        },
-        {
             heading: "Hemoglobin Structure & Function",
             content: `Adult Hb (HbA): 2α + 2β chains. HbA2: 2α + 2δ (normal <3.5%). HbF: 2α + 2γ (higher O₂ affinity, dominates fetal life).
 
@@ -43213,6 +43198,19 @@ TIBC: 250–370 µg/dL
 Ferritin: Men 30–300, Women 10–200 ng/mL
 Transferrin saturation: 20–50%`,
             mnemonic: `🧠 MCV classifies anemia: <80 = Micro, 80–100 = Normo, >100 = Macro`
+        },
+        {
+            heading: "Anemia Definition & Symptoms Mechanism",
+            content: `Anemia = ↓ oxygen-carrying capacity of blood.
+
+Compensatory mechanisms:
+1. ↑ Heart rate & cardiac output → palpitations, bounding pulse
+2. ↑ 2,3-BPG in RBCs → right shift, better O₂ unloading
+3. Redistribution of blood to vital organs → pallor (skin/conjunctiva)
+4. Stimulation of EPO → reticulocytosis
+
+General symptoms: fatigue (↓O₂ to muscles), pallor (vasoconstriction + ↓Hb), dyspnea on exertion (↑cardiac demand), tachycardia, headache (↓cerebral O₂), koilonychia (iron deficiency specific).`,
+            mnemonic: `🧠 FATIGUE: Fatigue, Anorexia, Tachycardia, Icterus (hemolytic), Glossitis (B12/Fe), Ulcers (leg - SCD), Exercise intolerance`
         },
         {
             heading: "Iron Study Interpretation — Serum Iron, Ferritin, Transferrin & TIBC",
@@ -43246,17 +43244,24 @@ WHY THE NUMBERS MOVE THE WAY THEY DO IN EACH CONDITION:
 🧠 The one number that moves in OPPOSITE directions between IDA and ACD is TIBC (up in IDA, down in ACD) — when ferritin is ambiguous (inflamed patient), TIBC is often the tiebreaker.`
         },
         {
-            heading: "Anemia Definition & Symptoms Mechanism",
-            content: `Anemia = ↓ oxygen-carrying capacity of blood.
+            heading: "Intravascular vs Extravascular Hemolysis — Where the RBC Actually Dies",
+            content: `Both terms describe the SAME end result — a red cell destroyed before its normal 120-day lifespan — but WHERE the destruction happens determines an almost entirely different set of lab findings, and confusing the two leads straight to the wrong workup.
 
-Compensatory mechanisms:
-1. ↑ Heart rate & cardiac output → palpitations, bounding pulse
-2. ↑ 2,3-BPG in RBCs → right shift, better O₂ unloading
-3. Redistribution of blood to vital organs → pallor (skin/conjunctiva)
-4. Stimulation of EPO → reticulocytosis
+EXTRAVASCULAR hemolysis (the default, ~90% of physiological turnover, and the dominant mechanism in most pathological hemolysis too — hereditary spherocytosis, warm AIHA, most hemoglobinopathies): the RBC is removed intact by splenic (and hepatic) macrophages, exactly as normal aged red cells are — the cell is recognised as abnormal (IgG-coated, rigid, or oddly shaped) and phagocytosed WHOLE. Because the red cell is broken down INSIDE the macrophage, none of its contents ever touch the plasma directly. Haemoglobin is degraded intracellularly to bilirubin (raising indirect/unconjugated bilirubin and urine urobilinogen) with NO free haemoglobin release into plasma or urine. Splenomegaly is common, since this is precisely the organ doing the extra work.
 
-General symptoms: fatigue (↓O₂ to muscles), pallor (vasoconstriction + ↓Hb), dyspnea on exertion (↑cardiac demand), tachycardia, headache (↓cerebral O₂), koilonychia (iron deficiency specific).`,
-            mnemonic: `🧠 FATIGUE: Fatigue, Anorexia, Tachycardia, Icterus (hemolytic), Glossitis (B12/Fe), Ulcers (leg - SCD), Exercise intolerance`
+INTRAVASCULAR hemolysis (the minority of physiological turnover, but the defining mechanism in MAHA/TTP/HUS/DIC, cold AIHA, PNH, G6PD deficiency crises, mismatched transfusion reactions, and mechanical heart valve haemolysis): the RBC membrane ruptures DIRECTLY within the bloodstream — from complement membrane-attack-complex perforation, mechanical shearing across fibrin strands, or osmotic/oxidative membrane failure. Because the cell contents spill straight into plasma, this releases FREE haemoglobin directly into the circulation — first mopped up by haptoglobin (which is why haptoglobin is characteristically LOW, sometimes undetectable, and is the single most sensitive marker of intravascular hemolysis specifically), then once haptoglobin's binding capacity is exceeded, free haemoglobin is filtered by the kidney, producing haemoglobinuria (dark red/brown urine, dipstick-positive for blood with NO red cells seen on microscopy — the classic trap) and, over days, haemosiderinuria as renal tubular cells reabsorb and store the excess iron before sloughing off. Splenomegaly is typically ABSENT or minimal, since the spleen is not the site of destruction.`,
+            mnemonic: `🧠 Extravascular = "Eaten by the spleen" — intact cell swallowed whole, no free Hb in plasma, splenomegaly expected, bilirubin/urobilinogen up.\n🧠 Intravascular = "Inside the vessel it bursts" — free Hb dumps into plasma, haptoglobin crashes, haemoglobinuria/haemosiderinuria appear, spleen usually normal size.\n🧠 The one lab that separates them fastest: LOW haptoglobin + haemoglobinuria = intravascular. Normal/mildly low haptoglobin + no haemoglobinuria + splenomegaly = extravascular.\n🧠 Classic intravascular causes: "MAHA-PIG" — MAHA (TTP/HUS/DIC), Autoimmune (cold AIHA/complement-fixing IgM), Hemolytic transfusion reaction, PNH, Infection (malaria, clostridial sepsis), G6PD crisis.`
+        },
+        {
+            heading: "Ineffective Erythropoiesis & Intramedullary Hemolysis — A Third Site of RBC Death",
+            content: `Extravascular and intravascular hemolysis both describe a red cell that made it out into the circulation as a mature (or near-mature) cell before being destroyed. Ineffective erythropoiesis is a different, earlier failure entirely — the developing erythroid precursor dies INSIDE the bone marrow, before it ever finishes maturing into a red cell capable of leaving. This is sometimes called "intramedullary hemolysis," a slightly loose but widely used label for the same phenomenon, because the destruction of the abnormal precursor happens within the marrow (medulla) by resident macrophages, mirroring the logic of extravascular hemolysis but one developmental step earlier.
+
+THE MECHANISM: normal erythropoiesis produces a large surplus of precursors, and a small fraction are always culled by marrow macrophages as routine quality control — this baseline "ineffective" fraction is physiological. In disease states, a defect in DNA synthesis, globin chain production, or membrane assembly causes an abnormally high proportion of precursors to be recognised as defective and phagocytosed in the marrow before ever being released as reticulocytes. The clinical result is a paradox that trips up almost every learner the first time they see it: the marrow is hypercellular and erythropoiesis looks "active" on biopsy, yet the peripheral blood shows anaemia with a reticulocyte count that is LOW or inappropriately normal — not the brisk reticulocytosis expected from a marrow working overtime. This mismatch (hypercellular marrow + poor peripheral output) is the single clinical fingerprint of ineffective erythropoiesis.
+
+WHY THE LABS LOOK "HEMOLYTIC" WITHOUT ANY MATURE CELL EVER RUPTURING: because so many precursors are broken down inside the marrow, haem is degraded to bilirubin at that site just as it would be in a splenic macrophage — producing unconjugated hyperbilirubinaemia, raised LDH (precursors are LDH-rich, so the LDH elevation here is often more marked than in ordinary extravascular hemolysis), and a low-to-borderline haptoglobin, all while the reticulocyte count fails to rise appropriately. This combination — "hemolytic" chemistry with a blunted reticulocyte response — is what separates ineffective erythropoiesis from ordinary peripheral hemolysis, where the marrow compensates and the reticulocyte count climbs.
+
+CLASSIC CAUSES: megaloblastic anaemia (B12/folate deficiency — impaired DNA synthesis leaves precursors too immature to survive, the prototypical example, sometimes producing dramatic LDH elevations that mimic haemolytic crisis), thalassaemia major and intermedia (excess unpaired globin chains precipitate and damage precursor membranes before release), sideroblastic anaemias and myelodysplastic syndromes (defective haem synthesis or dysplastic maturation), and congenital dyserythropoietic anaemias.`,
+            mnemonic: `🧠 Extravascular = mature cell eaten in the spleen. Intravascular = mature cell bursts in the vessel. Ineffective erythropoiesis (intramedullary hemolysis) = immature precursor dies in the marrow before it ever gets out — three sites, three mechanisms, one shared downstream chemistry (↑bilirubin, ↑LDH, ↓haptoglobin).\n🧠 The giveaway on labs: hypercellular marrow + anaemia + a retic count that is LOW or inappropriately normal (not high) = think ineffective erythropoiesis, not peripheral hemolysis.\n🧠 Classic causes — "MTS-C": Megaloblastic anaemia (B12/folate), Thalassaemia major/intermedia, Sideroblastic anaemia/MDS, Congenital dyserythropoietic anaemia.`
         }
     ]
 };
@@ -47796,8 +47801,18 @@ const lungSounds = [
 const cardiacCycle = {
     phases: [
         {
+            name: "Atrial Systole (A-wave)",
+            timing: "0–100ms (P wave → atrial kick)",
+            ecg: "P wave",
+            sounds: ["S4 (if present)", "Presystolic murmur accentuation (MS in SR)", "A2 wave on echo"],
+            valves: { Aortic: "Closed", Pulmonary: "Closed", Mitral: "Open", Tricuspid: "Open" },
+            pressure: "Atria contract forcefully; ~30% additional filling; LV end-diastolic pressure rises",
+            color: "#c77dff",
+            description: "Atrial kick. Accounts for 30% of SV at rest (more in HTN/poor compliance). S4 = stiff ventricle resisting atrial filling.",
+        },
+        {
             name: "Isovolumetric Contraction",
-            timing: "0–50ms (after QRS)",
+            timing: "100–150ms (after QRS)",
             ecg: "QRS onset → QRS end",
             sounds: ["S1 (MV + TV close)"],
             valves: { Aortic: "Closed", Pulmonary: "Closed", Mitral: "CLOSING", Tricuspid: "CLOSING" },
@@ -47807,7 +47822,7 @@ const cardiacCycle = {
         },
         {
             name: "Rapid Ejection",
-            timing: "50–200ms",
+            timing: "150–300ms",
             ecg: "ST segment",
             sounds: ["Ejection click (if valvular AS/PS)", "Peak systolic flow"],
             valves: { Aortic: "OPEN", Pulmonary: "OPEN", Mitral: "Closed", Tricuspid: "Closed" },
@@ -47817,7 +47832,7 @@ const cardiacCycle = {
         },
         {
             name: "Reduced Ejection",
-            timing: "200–350ms",
+            timing: "300–450ms",
             ecg: "T wave",
             sounds: ["Midsystolic click (MVP)", "Systolic murmurs peak here"],
             valves: { Aortic: "Open", Pulmonary: "Open", Mitral: "Closed", Tricuspid: "Closed" },
@@ -47827,7 +47842,7 @@ const cardiacCycle = {
         },
         {
             name: "Isovolumetric Relaxation",
-            timing: "350–420ms",
+            timing: "450–520ms",
             ecg: "End T wave",
             sounds: ["S2 (AV + PV close)", "Opening snap (if MS)"],
             valves: { Aortic: "CLOSING", Pulmonary: "CLOSING", Mitral: "Closed", Tricuspid: "Closed" },
@@ -47837,7 +47852,7 @@ const cardiacCycle = {
         },
         {
             name: "Rapid Filling (E-wave)",
-            timing: "420–550ms",
+            timing: "520–650ms",
             ecg: "After T wave",
             sounds: ["S3 (if present)", "Opening snap → rumble (MS)", "Mitral E wave on echo"],
             valves: { Aortic: "Closed", Pulmonary: "Closed", Mitral: "OPEN", Tricuspid: "OPEN" },
@@ -47847,23 +47862,13 @@ const cardiacCycle = {
         },
         {
             name: "Diastasis (Slow filling)",
-            timing: "550–700ms",
+            timing: "650–800ms",
             ecg: "PR segment",
             sounds: ["Usually silent", "Mid-diastolic murmurs heard here (MS, TS, Austin Flint)"],
             valves: { Aortic: "Closed", Pulmonary: "Closed", Mitral: "Open", Tricuspid: "Open" },
             pressure: "LA = LV pressure equilibrated; minimal flow; MV/TV still open",
             color: "#00d4ff",
             description: "Slow filling phase. Pressures equalize between LA and LV. Mid-diastolic murmurs (MS) heard during this quiet period.",
-        },
-        {
-            name: "Atrial Systole (A-wave)",
-            timing: "700–800ms",
-            ecg: "P wave",
-            sounds: ["S4 (if present)", "Presystolic murmur accentuation (MS in SR)", "A2 wave on echo"],
-            valves: { Aortic: "Closed", Pulmonary: "Closed", Mitral: "Open", Tricuspid: "Open" },
-            pressure: "Atria contract forcefully; ~30% additional filling; LV end-diastolic pressure rises",
-            color: "#c77dff",
-            description: "Atrial kick. Accounts for 30% of SV at rest (more in HTN/poor compliance). S4 = stiff ventricle resisting atrial filling.",
         },
     ],
 };
@@ -48454,11 +48459,11 @@ const _hlPhaseBoundsMs = cardiacCycle.phases.reduce((acc, p) => {
 }, [0]);
 const _hlTotalMsRef = _hlPhaseBoundsMs[_hlPhaseBoundsMs.length - 1] || 800;
 /* ===== Cardiac cycle visual: living heart + Wiggers strip (replaces the sliding bar) ===== */
-const _HL_LV = [[0, 8], [25, 30], [50, 80], [90, 115], [125, 122], [200, 115], [300, 100], [350, 92], [385, 40], [420, 6], [500, 4], [600, 6], [700, 7], [750, 11], [800, 9]];
+const _HL_LV = [[0, 8], [25, 30], [50, 80], [90, 115], [125, 122], [200, 115], [300, 100], [350, 92], [385, 40], [420, 6], [500, 4], [600, 6], [700, 7], [750, 11], [800, 8]];
 const _HL_AO = [[0, 80], [50, 80], [90, 112], [125, 120], [200, 114], [300, 102], [345, 94], [356, 89], [372, 94], [420, 89], [550, 83], [700, 80], [800, 80]];
 const _HL_LA = [[0, 6], [30, 8], [60, 5], [200, 3], [300, 8], [380, 13], [420, 12], [470, 5], [600, 6], [700, 7], [740, 11], [780, 9], [800, 6]];
 const _HL_VOL = [[0, 120], [50, 120], [125, 95], [200, 72], [350, 52], [420, 52], [500, 95], [600, 108], [700, 112], [800, 120]];
-const _HL_AFILL = [[0, 0.5], [350, 0.95], [420, 0.95], [500, 0.55], [650, 0.62], [700, 0.72], [780, 0.3], [800, 0.45]];
+const _HL_AFILL = [[0, 0.5], [350, 0.95], [420, 0.95], [500, 0.55], [650, 0.62], [700, 0.72], [780, 0.3], [800, 0.5]];
 function _hlSpline(pts, x) {
     const n = pts.length;
     if (x <= pts[0][0]) return pts[0][1];
@@ -48473,31 +48478,33 @@ function _hlSpline(pts, x) {
 }
 function _hlEcg(ms) {
     const g = (c, w, a) => a * Math.exp(-(((ms - c) / w) ** 2));
-    return g(660, 20, 0.16) + g(8, 5, -0.2) + g(24, 7, 1.0) + g(40, 6, -0.3) + g(285, 40, 0.32);
+    return g(712, 18, 0.16) + g(8, 5, -0.2) + g(24, 7, 1.0) + g(40, 6, -0.3) + g(285, 40, 0.32);
 }
 const _HL_WX = (m) => 22 + (m / 800) * 308;
 const _HL_WY = (v) => 110 - (v / 130) * 92;
 const _HL_EY = (e) => 142 - e * 18;
-const _hlPath = (fn) => { let d = ""; for (let m = 0; m <= 800; m += 4) d += (m ? "L" : "M") + _HL_WX(m).toFixed(1) + " " + fn(m).toFixed(1); return d; };
+const _HL_SH = 700; /* the displayed cycle starts at atrial systole (P wave); model time = display time + 700 ms */
+const _hlRot = (n) => (n + _HL_SH) % 800;
+const _hlPath = (fn) => { let d = ""; for (let m = 0; m <= 800; m += 4) d += (m ? "L" : "M") + _HL_WX(m).toFixed(1) + " " + fn(_hlRot(m)).toFixed(1); return d; };
 const _HL_PATHS = { lv: _hlPath(m => _HL_WY(_hlSpline(_HL_LV, m))), ao: _hlPath(m => _HL_WY(_hlSpline(_HL_AO, m))), la: _hlPath(m => _HL_WY(_hlSpline(_HL_LA, m))), ecg: _hlPath(m => _HL_EY(_hlEcg(m))) };
 const _hlRamp = (x, a, b) => (x <= a ? 0 : x >= b ? 1 : (x - a) / (b - a));
 const _hlSm = (u) => u * u * (3 - 2 * u);
 /* ===== Cardiac cycle v2: anatomical heart schematic + annotated Wiggers diagram ===== */
 const _HL2 = { X: m => 26 + (m / 800) * 306, PY: v => 112 - (v / 130) * 88, VY: v => 112 - ((v - 48) / 76) * 80, EY: e => 150 - e * 16 };
-const _hl2Path = fn => { let d = ""; for (let m = 0; m <= 800; m += 4) d += (m ? "L" : "M") + _HL2.X(m).toFixed(1) + " " + fn(m).toFixed(1); return d; };
+const _hl2Path = fn => { let d = ""; for (let m = 0; m <= 800; m += 4) d += (m ? "L" : "M") + _HL2.X(m).toFixed(1) + " " + fn(_hlRot(m)).toFixed(1); return d; };
 const _HL2_PATHS = {
     lv: _hl2Path(m => _HL2.PY(_hlSpline(_HL_LV, m))), ao: _hl2Path(m => _HL2.PY(_hlSpline(_HL_AO, m))),
     la: _hl2Path(m => _HL2.PY(_hlSpline(_HL_LA, m))), vol: _hl2Path(m => _HL2.VY(_hlSpline(_HL_VOL, m))),
     ecg: _hl2Path(m => _HL2.EY(_hlEcg(m)))
 };
 const _HL2_WHY = [
+    "The P wave fires the atria, which squeeze in the last 20% of filling. An S4 may be heard against a stiff ventricle.",
     "LV pressure climbs above LA pressure, so the mitral valve slams shut (S1). It is still below aortic pressure, so the aortic valve stays shut. Nothing can leave: volume is constant.",
     "LV pressure overtakes aortic pressure, so the aortic valve opens. About two thirds of the stroke volume leaves quickly.",
     "Ejection slows as the ventricle starts to relax. LV and aortic pressures are almost equal; momentum keeps blood moving.",
     "LV pressure falls below aortic pressure, so the aortic valve closes (S2, dicrotic notch). LV pressure is still above LA pressure, so the mitral stays shut. Volume is constant.",
     "LV pressure drops below LA pressure, so the mitral valve opens and blood rushes in passively. An S3 may be heard here.",
-    "LA and LV pressures equalise. Only a slow trickle of filling continues.",
-    "The P wave fires the atria, which squeeze in the last 20% of filling. An S4 may be heard against a stiff ventricle."
+    "LA and LV pressures equalise. Only a slow trickle of filling continues."
 ];
 function _hl2Along(pts, p) {
     const seg = pts.length - 1, f = Math.min(0.9999, p) * seg, i = Math.floor(f), u = f - i;
@@ -48512,15 +48519,16 @@ function _Raw__HL_CycleViz({ frac, resting, includeExtra, phases }) {
     if (!resting) { for (let i = 0; i < B.length - 1; i++) { if (m >= B[i] && m < B[i + 1]) { idx = i; break; } } }
     const ph = idx >= 0 ? phases[idx] : null;
     const col = ph ? ph.color : "#64748b";
-    const avOpen = _hlSm(_hlRamp(m, 418, 436)) * (1 - _hlSm(_hlRamp(m, 786, 799)));
-    const smOpen = _hlSm(_hlRamp(m, 40, 56)) * (1 - _hlSm(_hlRamp(m, 338, 352)));
-    const vol = _hlSpline(_HL_VOL, m), af = _hlSpline(_HL_AFILL, m);
-    const pLV = _hlSpline(_HL_LV, m), pAo = _hlSpline(_HL_AO, m), pLA = _hlSpline(_HL_LA, m);
+    const mo = _hlRot(m);
+    const avOpen = _hlSm(_hlRamp(mo, 418, 436)) * (1 - _hlSm(_hlRamp(mo, 786, 799)));
+    const smOpen = _hlSm(_hlRamp(mo, 40, 56)) * (1 - _hlSm(_hlRamp(mo, 338, 352)));
+    const vol = _hlSpline(_HL_VOL, mo), af = _hlSpline(_HL_AFILL, mo);
+    const pLV = _hlSpline(_HL_LV, mo), pAo = _hlSpline(_HL_AO, mo), pLA = _hlSpline(_HL_LA, mo);
     const sq = Math.max(0, Math.min(1, (120 - vol) / 68));
-    const atrialSq = _hlSm(_hlRamp(m, 705, 760)) * (1 - _hlSm(_hlRamp(m, 770, 800)));
+    const atrialSq = _hlSm(_hlRamp(mo, 705, 760)) * (1 - _hlSm(_hlRamp(mo, 770, 800)));
     const status = idx < 0 ? "Resting gap before the next beat" : (avOpen > 0.5 ? "Mitral + tricuspid OPEN \u00B7 aortic + pulmonary closed" : smOpen > 0.5 ? "Aortic + pulmonary OPEN \u00B7 AV valves closed" : "ALL valves closed");
     const RED = "#ff5470", BLUE = "#4f8cff", GOLD = "#ffd166", ORG = "#ffa502", GRN = "#2ed573", PUR = "#c084fc", CY = "#7dd3fc";
-    const pulse = (s, d) => (m >= s && m < s + d ? (m - s) / d : -1);
+    const pulse = (s, d) => (mo >= s && mo < s + d ? (mo - s) / d : -1);
     const s1 = pulse(0, 95), s2 = pulse(350, 95), s3 = includeExtra ? pulse(425, 110) : -1, s4 = includeExtra ? pulse(700, 95) : -1;
     const ring = (key, cx, cy, p, color, R) => (p < 0 ? null : E("circle", { key, cx, cy, r: 5 + R * p, fill: "none", stroke: color, strokeWidth: 0.6 + 2.4 * (1 - p), opacity: 0.9 * (1 - p) }));
     const dots = (key, pts, strength, color, n, spd) => (strength < 0.12 ? null : Array.from({ length: n }, (_, j) => {
@@ -48528,19 +48536,19 @@ function _Raw__HL_CycleViz({ frac, resting, includeExtra, phases }) {
         return E("g", { key: key + j }, E("circle", { cx: xy[0], cy: xy[1], r: 4.2, fill: color, opacity: o * 0.22 }), E("circle", { cx: xy[0], cy: xy[1], r: 2.1, fill: color, opacity: Math.min(1, o * 1.1) }));
     }));
     const grad = (id, c) => E("linearGradient", { key: id, id, x1: 0, y1: 0, x2: 0, y2: 1 }, E("stop", { offset: "0", stopColor: c, stopOpacity: 0.85 }), E("stop", { offset: "1", stopColor: c, stopOpacity: 0.42 }));
-    const RAf = "M80 118 C72 92 74 62 98 46 C118 34 142 44 150 70 C154 90 148 106 146 118 Z";
-    const RAs = "M80 118 C72 92 74 62 98 46 C118 34 142 44 150 70 C154 90 148 106 146 118";
-    const RVf = "M40 118 V172 Q40 218 100 228 Q156 218 156 168 V118 Z", RVs = "M40 118 V172 Q40 218 100 228 Q156 218 156 168 V118";
-    const LVf = "M184 118 V168 Q184 218 242 228 Q300 218 300 172 V118 Z", LVs = "M184 118 V168 Q184 218 242 228 Q300 218 300 172 V118";
-    const atrium = (key, tx, blood, edge) => {
+    const RAs = "M62 118 C54 92 56 62 82 46 C108 32 148 40 164 66 C170 84 170 104 170 118", LAs = "M278 118 C286 92 284 62 258 46 C232 32 192 40 176 66 C170 84 170 104 170 118";
+    const RAf = RAs + " Z", LAf = LAs + " Z";
+    const RVf = "M40 118 V172 Q40 220 105 230 Q152 228 170 214 V118 Z", RVs = "M40 118 V172 Q40 220 105 230 Q152 228 170 214 V118";
+    const LVf = "M170 118 V214 Q188 228 235 230 Q300 220 300 172 V118 Z", LVs = "M170 118 V214 Q188 228 235 230 Q300 220 300 172 V118";
+    const atrium = (key, cxA, dF, dS, blood, edge) => {
         const sc = 1 - 0.1 * atrialSq, top = 118 - af * 84;
-        return E("g", { key, transform: "translate(" + tx + " 0)" },
-            E("g", { transform: "translate(113 80) scale(" + sc.toFixed(3) + ") translate(-113 -80)" },
-                E("clipPath", { id: "hlc" + key }, E("path", { d: RAf })),
-                E("path", { d: RAf, fill: "#0a1020" }),
-                E("rect", { x: 60, y: top, width: 110, height: 90, fill: "url(#hlb" + key + ")", clipPath: "url(#hlc" + key + ")" }),
-                E("rect", { x: 60, y: top, width: 110, height: 1.6, fill: "#fff", opacity: 0.35, clipPath: "url(#hlc" + key + ")" }),
-                E("path", { d: RAs, fill: "none", stroke: edge, strokeWidth: 1.6 + atrialSq * 2.4, strokeLinejoin: "round" })));
+        return E("g", { key },
+            E("g", { transform: "translate(" + cxA + " 80) scale(" + sc.toFixed(3) + ") translate(" + (-cxA) + " -80)" },
+                E("clipPath", { id: "hlc" + key }, E("path", { d: dF })),
+                E("path", { d: dF, fill: "#0a1020" }),
+                E("rect", { x: 40, y: top, width: 260, height: 90, fill: "url(#hlb" + key + ")", clipPath: "url(#hlc" + key + ")" }),
+                E("rect", { x: 40, y: top, width: 260, height: 1.6, fill: "#fff", opacity: 0.35, clipPath: "url(#hlc" + key + ")" }),
+                E("path", { d: dS, fill: "none", stroke: edge, strokeWidth: 1.6 + atrialSq * 2.4, strokeLinejoin: "round" })));
     };
     const vent = (key, cx, dF, dS, blood, edge, wall) => {
         const sx = 1 - 0.08 * sq, sy = 1 - 0.14 * sq, top = 228 - (vol / 122) * 110;
@@ -48579,8 +48587,8 @@ function _Raw__HL_CycleViz({ frac, resting, includeExtra, phases }) {
     const stateOf = o => (o > 0.92 ? ["OPEN", GRN] : o > 0.08 ? [o > 0.5 ? "OPENING" : "CLOSING", GOLD] : ["CLOSED", "#ff6b81"]);
     const chips = [["Tricuspid", avOpen], ["Pulmonary", smOpen], ["Mitral", avOpen], ["Aortic", smOpen]];
     const Xc = _HL2.X, cx0 = Xc(m);
-    const evs = [[10, "MV close", 0, "start", RED], [56, "AV open", 1, "start", ORG], [350, "AV close", 0, "middle", ORG], [425, "MV open", 1, "start", GRN]];
-    const ticks = [[15, "S1", RED, s1, true], [365, "S2", ORG, s2, true], [440, "S3?", GRN, s3, includeExtra], [715, "S4?", PUR, s4, includeExtra]];
+    const evs = [[110, "MV close", 0, "start", RED], [156, "AV open", 1, "start", ORG], [450, "AV close", 0, "middle", ORG], [525, "MV open", 1, "start", GRN]];
+    const ticks = [[115, "S1", RED, s1, true], [465, "S2", ORG, s2, true], [540, "S3?", GRN, s3, includeExtra], [15, "S4?", PUR, s4, includeExtra]];
     const dot = (x, y, c, key) => [E("circle", { key: key + "h", cx: x, cy: y, r: 6.5, fill: c, opacity: 0.22 }), E("circle", { key: key + "d", cx: x, cy: y, r: 3, fill: "#fff", stroke: c, strokeWidth: 1.5 })];
     return E("div", { style: { marginBottom: 10 } },
         E("div", { style: { display: "flex", alignItems: "center", gap: 10, marginBottom: 8, minHeight: 36 } },
@@ -48601,37 +48609,38 @@ function _Raw__HL_CycleViz({ frac, resting, includeExtra, phases }) {
                 E("linearGradient", { id: "hlvR", x1: 0, y1: 1, x2: 0, y2: 0 }, E("stop", { offset: "0", stopColor: RED, stopOpacity: 0.05 }), E("stop", { offset: "1", stopColor: RED, stopOpacity: 0.28 }))),
             E("rect", { x: 40, y: 12, width: 28, height: 106, fill: "url(#hlvB)" }), E("path", { d: "M40 118 V12 M68 118 V12", stroke: BLUE, strokeWidth: 1.5, opacity: 0.7, fill: "none" }),
             E("rect", { x: 272, y: 12, width: 28, height: 106, fill: "url(#hlvR)" }), E("path", { d: "M272 118 V12 M300 118 V12", stroke: RED, strokeWidth: 1.5, opacity: 0.7, fill: "none" }),
-            E("rect", { x: 98, y: 12, width: 22, height: 34, fill: "url(#hlvB)" }), E("path", { d: "M98 46 V12 M120 46 V12", stroke: BLUE, strokeWidth: 1.2, opacity: 0.55, fill: "none" }),
-            E("rect", { x: 212, y: 12, width: 22, height: 34, fill: "url(#hlvR)" }), E("path", { d: "M212 46 V12 M234 46 V12", stroke: RED, strokeWidth: 1.2, opacity: 0.55, fill: "none" }),
-            E("rect", { x: 156, y: 118, width: 28, height: 98, fill: "#16213f", stroke: "#2a3a63", strokeWidth: 1 }),
-            E("path", { d: "M68 118 H82 M146 118 H156 M184 118 H194 M260 118 H272", stroke: "#33466f", strokeWidth: 3, strokeLinecap: "round" }),
-            vent("rv", 98, RVf, RVs, BLUE, BLUE + "bb", 2.2 + 2 * sq), vent("lv", 242, LVf, LVs, RED, RED + "bb", 3 + 4 * sq),
-            atrium("ra", 0, BLUE, BLUE + "bb"), atrium("la", 114, RED, RED + "bb"),
-            avValve(113, 98, GOLD, "tv"), avValve(227, 242, GOLD, "mv"), slValve(54, ORG, "pv"), slValve(286, ORG, "av"),
-            dots("vc", [[109, 14], [109, 50], [112, 82]], 0.5 + 0.45 * (1 - avOpen), "#9db9ff", 3, 260), dots("pvn", [[223, 14], [223, 50], [226, 82]], 0.5 + 0.45 * (1 - avOpen), "#ff9aaa", 3, 260),
-            dots("ftr", [[113, 70], [113, 118], [100, 190]], avOpen, "#9db9ff", 5, 95), dots("fml", [[227, 70], [227, 118], [240, 190]], avOpen, "#ff9aaa", 5, 95),
+            E("rect", { x: 90, y: 12, width: 22, height: 34, fill: "url(#hlvB)" }), E("path", { d: "M90 46 V12 M112 46 V12", stroke: BLUE, strokeWidth: 1.2, opacity: 0.55, fill: "none" }),
+            E("rect", { x: 228, y: 12, width: 22, height: 34, fill: "url(#hlvR)" }), E("path", { d: "M228 46 V12 M250 46 V12", stroke: RED, strokeWidth: 1.2, opacity: 0.55, fill: "none" }),
+            E("path", { d: "M68 118 H84 M148 118 H192 M256 118 H272", stroke: "#33466f", strokeWidth: 3, strokeLinecap: "round" }),
+            vent("rv", 170, RVf, RVs, BLUE, BLUE + "bb", 2.2 + 2 * sq), vent("lv", 170, LVf, LVs, RED, RED + "bb", 3 + 4 * sq),
+            atrium("ra", 116, RAf, RAs, BLUE, BLUE + "bb"), atrium("la", 224, LAf, LAs, RED, RED + "bb"),
+            E("path", { d: "M170 66 V118 M170 118 V214", stroke: "#3d507d", strokeWidth: 3.2, strokeLinecap: "round", opacity: 0.9 }),
+            avValve(116, 170, GOLD, "tv"), avValve(224, 170, GOLD, "mv"), slValve(54, ORG, "pv"), slValve(286, ORG, "av"),
+            dots("vc", [[101, 14], [101, 50], [108, 82]], 0.5 + 0.45 * (1 - avOpen), "#9db9ff", 3, 260), dots("pvn", [[239, 14], [239, 50], [232, 82]], 0.5 + 0.45 * (1 - avOpen), "#ff9aaa", 3, 260),
+            dots("ftr", [[116, 70], [116, 118], [106, 190]], avOpen, "#9db9ff", 5, 95), dots("fml", [[224, 70], [224, 118], [234, 190]], avOpen, "#ff9aaa", 5, 95),
             dots("fp", [[60, 200], [54, 118], [54, 18]], smOpen, "#9db9ff", 5, 80), dots("fa", [[250, 200], [286, 118], [286, 18]], smOpen, "#ff9aaa", 5, 80),
-            ring("r1a", 113, 118, s1, RED, 44), ring("r1b", 227, 118, s1, RED, 44), ring("r2a", 54, 118, s2, ORG, 34), ring("r2b", 286, 118, s2, ORG, 34),
-            ring("r3", 242, 180, s3, GRN, 44), ring("r4", 227, 70, s4, PUR, 40),
+            ring("r1a", 116, 118, s1, RED, 44), ring("r1b", 224, 118, s1, RED, 44), ring("r2a", 54, 118, s2, ORG, 34), ring("r2b", 286, 118, s2, ORG, 34),
+            ring("r3", 235, 180, s3, GRN, 44), ring("r4", 224, 70, s4, PUR, 40),
             E("text", { x: 54, y: 9, fontSize: 6.5, fill: BLUE, textAnchor: "middle" }, "to lungs"), E("text", { x: 286, y: 9, fontSize: 6.5, fill: RED, textAnchor: "middle" }, "to body"),
-            E("text", { x: 109, y: 9, fontSize: 6.5, fill: BLUE, textAnchor: "middle" }, "vena cava"), E("text", { x: 223, y: 9, fontSize: 6.5, fill: RED, textAnchor: "middle" }, "pulm. veins"),
-            E("text", Object.assign({ x: 113, y: 80, fontSize: 9 }, outline(0, "#cfe0ff")), "RA"), E("text", Object.assign({ x: 227, y: 76, fontSize: 9 }, outline(0, "#ffd9e0")), "LA"),
-            E("text", Object.assign({ x: 227, y: 87, fontSize: 7.5 }, outline(0, "#ffd9e0")), Math.round(pLA)),
-            E("text", Object.assign({ x: 98, y: 168, fontSize: 9 }, outline(0, "#cfe0ff")), "RV"),
-            E("text", Object.assign({ x: 242, y: 160, fontSize: 9 }, outline(0, "#ffd9e0")), "LV"),
-            E("text", Object.assign({ x: 242, y: 174, fontSize: 13 }, outline(0, "#fff")), Math.round(pLV)), E("text", Object.assign({ x: 242, y: 183, fontSize: 6 }, outline(0, "#ffd9e0")), "mmHg"),
+            E("text", { x: 101, y: 9, fontSize: 6.5, fill: BLUE, textAnchor: "middle" }, "vena cava"), E("text", { x: 239, y: 9, fontSize: 6.5, fill: RED, textAnchor: "middle" }, "pulm. veins"),
+            E("text", Object.assign({ x: 112, y: 80, fontSize: 9 }, outline(0, "#cfe0ff")), "RA"), E("text", Object.assign({ x: 228, y: 76, fontSize: 9 }, outline(0, "#ffd9e0")), "LA"),
+            E("text", Object.assign({ x: 228, y: 87, fontSize: 7.5 }, outline(0, "#ffd9e0")), Math.round(pLA)),
+            E("text", Object.assign({ x: 105, y: 168, fontSize: 9 }, outline(0, "#cfe0ff")), "RV"),
+            E("text", Object.assign({ x: 236, y: 160, fontSize: 9 }, outline(0, "#ffd9e0")), "LV"),
+            E("text", Object.assign({ x: 236, y: 174, fontSize: 13 }, outline(0, "#fff")), Math.round(pLV)), E("text", Object.assign({ x: 236, y: 183, fontSize: 6 }, outline(0, "#ffd9e0")), "mmHg"),
             E("text", Object.assign({ x: 286, y: 60, fontSize: 7 }, outline(0, "#ffd9e0")), "Ao"), E("text", Object.assign({ x: 286, y: 70, fontSize: 8.5 }, outline(0, "#fff")), Math.round(pAo)),
-            sndTxt && E("g", null, E("text", Object.assign({ x: 170, y: 70, fontSize: 17 }, outline(0, sndTxt[2])), sndTxt[0]), E("text", { x: 170, y: 82, fontSize: 7, fill: sndTxt[2], textAnchor: "middle", letterSpacing: "0.2em" }, sndTxt[1])),
+            sndTxt && E("g", null, E("text", Object.assign({ x: 170, y: 30, fontSize: 17 }, outline(0, sndTxt[2])), sndTxt[0]), E("text", { x: 170, y: 42, fontSize: 7, fill: sndTxt[2], textAnchor: "middle", letterSpacing: "0.2em" }, sndTxt[1])),
             E("text", { x: 170, y: 241, fontSize: 6.5, fill: "#5d6f93", textAnchor: "middle", letterSpacing: "0.1em" }, "BLUE = DEOXYGENATED \u00B7 RED = OXYGENATED \u00B7 PATIENT'S RIGHT ON LEFT")),
         E("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 5, marginTop: 8 } }, chips.map(c => { const st = stateOf(c[1]); return E("div", { key: c[0], style: { borderRadius: 8, padding: "5px 4px", textAlign: "center", background: st[1] + "12", border: "1px solid " + st[1] + "44", transition: "background .3s, border-color .3s" } }, E("div", { style: { fontSize: 8.5, color: "#94a3b8", letterSpacing: "0.04em" } }, c[0]), E("div", { style: { fontSize: 9, fontWeight: 800, color: st[1], marginTop: 1, transition: "color .3s" } }, "\u25CF ", st[0])); })),
         E("div", { style: { display: "flex", gap: 5, marginTop: 6 } }, [["LA", pLA, GRN], ["LV", pLV, RED], ["Aorta", pAo, ORG]].map(p => E("div", { key: p[0], style: { flex: 1, borderRadius: 8, padding: "4px 6px", background: p[2] + "10", border: "1px solid " + p[2] + "33", display: "flex", justifyContent: "space-between", alignItems: "baseline" } }, E("span", { style: { fontSize: 9, color: p[2], fontWeight: 700 } }, p[0]), E("span", { style: { fontSize: 12, color: "#e2e8f0", fontWeight: 800, fontVariantNumeric: "tabular-nums" } }, Math.round(p[1]), E("span", { style: { fontSize: 7.5, color: "#7b8aa6", fontWeight: 600 } }, " mmHg"))))),
-        E("div", { style: { marginTop: 6, padding: "7px 10px", borderRadius: 9, fontSize: 11, lineHeight: 1.5, color: "#c3cee0", background: col + "10", borderLeft: "3px solid " + col, transition: "background .3s, border-color .3s", minHeight: 52 } }, idx >= 0 ? _HL2_WHY[idx] : "Atria refill passively from the veins while the ventricles wait for the next QRS."),
+        E("div", { style: { marginTop: 6, padding: "7px 10px", borderRadius: 9, fontSize: 11, lineHeight: 1.5, color: "#c3cee0", background: col + "10", borderLeft: "3px solid " + col, transition: "background .3s, border-color .3s", minHeight: 52 } }, idx >= 0 ? _HL2_WHY[idx] : "The P wave fires the atria."),
         E("svg", { viewBox: "0 0 340 198", width: "100%", style: { display: "block", marginTop: 8, background: "#070b16", borderRadius: 14, border: "1px solid #1e2d4a" } },
             E("defs", null, E("clipPath", { id: "hlRev" }, E("rect", { x: 0, y: 0, width: cx0, height: 198 }))),
-            E("rect", { x: Xc(0), y: 22, width: Xc(350) - Xc(0), height: 156, fill: "#ff4757", opacity: 0.06 }),
-            E("rect", { x: Xc(350), y: 22, width: Xc(800) - Xc(350), height: 156, fill: "#00d4ff", opacity: 0.05 }),
-            E("text", { x: (Xc(0) + Xc(350)) / 2, y: 11, fontSize: 6.5, fill: "#ff7a86", textAnchor: "middle", letterSpacing: "0.18em" }, "SYSTOLE"),
-            E("text", { x: (Xc(350) + Xc(800)) / 2, y: 11, fontSize: 6.5, fill: "#5fd0ff", textAnchor: "middle", letterSpacing: "0.18em" }, "DIASTOLE"),
+            E("rect", { x: Xc(100), y: 22, width: Xc(450) - Xc(100), height: 156, fill: "#ff4757", opacity: 0.06 }),
+            E("rect", { x: Xc(450), y: 22, width: Xc(800) - Xc(450), height: 156, fill: "#00d4ff", opacity: 0.05 }),
+            E("rect", { x: Xc(0), y: 22, width: Xc(100) - Xc(0), height: 156, fill: "#00d4ff", opacity: 0.05 }),
+            E("text", { x: (Xc(100) + Xc(450)) / 2, y: 11, fontSize: 6.5, fill: "#ff7a86", textAnchor: "middle", letterSpacing: "0.18em" }, "SYSTOLE"),
+            E("text", { x: (Xc(450) + Xc(800)) / 2, y: 11, fontSize: 6.5, fill: "#5fd0ff", textAnchor: "middle", letterSpacing: "0.18em" }, "DIASTOLE"),
             [0, 40, 80, 120].map(v => E("g", { key: "g" + v }, E("line", { x1: 26, x2: 332, y1: _HL2.PY(v), y2: _HL2.PY(v), stroke: "#1b2744", strokeWidth: 0.6, strokeDasharray: "2 3" }), E("text", { x: 22, y: _HL2.PY(v) + 2, fontSize: 5.5, fill: "#4e6280", textAnchor: "end" }, v))),
             E("text", { x: 4, y: 22, fontSize: 5.5, fill: "#4e6280" }, "mmHg"),
             B.slice(0, 7).map((b, i) => E("g", { key: "pb" + i }, E("line", { x1: Xc(b), x2: Xc(b), y1: 22, y2: 178, stroke: "#22304f", strokeWidth: 0.6 }), E("text", { x: Xc((b + B[i + 1]) / 2), y: 20, fontSize: 6.5, fontWeight: 800, fill: phases[i] ? phases[i].color : "#888", textAnchor: "middle", opacity: idx === i ? 1 : 0.5 }, i + 1))),
@@ -48645,7 +48654,7 @@ function _Raw__HL_CycleViz({ frac, resting, includeExtra, phases }) {
                 E("path", { d: _HL2_PATHS.lv, fill: "none", stroke: RED, strokeWidth: 2.2, strokeLinejoin: "round", strokeLinecap: "round" }),
                 E("path", { d: _HL2_PATHS.ecg, fill: "none", stroke: CY, strokeWidth: 1.5, strokeLinejoin: "round" })),
             E("rect", { x: cx0 - 3, y: 22, width: 6, height: 156, fill: col, opacity: 0.1 }), E("line", { x1: cx0, x2: cx0, y1: 22, y2: 178, stroke: col, strokeWidth: 1, opacity: 0.7 }),
-            dot(cx0, _HL2.PY(pLA), GRN, "a"), dot(cx0, _HL2.PY(pAo), ORG, "b"), dot(cx0, _HL2.PY(pLV), RED, "c"), dot(cx0, _HL2.VY(vol), PUR, "v"), dot(cx0, _HL2.EY(_hlEcg(m)), CY, "e"),
+            dot(cx0, _HL2.PY(pLA), GRN, "a"), dot(cx0, _HL2.PY(pAo), ORG, "b"), dot(cx0, _HL2.PY(pLV), RED, "c"), dot(cx0, _HL2.VY(vol), PUR, "v"), dot(cx0, _HL2.EY(_hlEcg(mo)), CY, "e"),
             evs.map((ev, i) => E("g", { key: "ev" + i }, E("line", { x1: Xc(ev[0]), x2: Xc(ev[0]), y1: 30, y2: 114, stroke: ev[4], strokeWidth: 0.6, strokeDasharray: "1.5 2.5", opacity: 0.55 }), E("path", { d: "M" + Xc(ev[0]) + " 112 l-2.6 5 h5.2 z", fill: ev[4] }), E("text", { x: Xc(ev[0]) + (ev[3] === "start" ? -2 : 0), y: 124 + ev[2] * 8, fontSize: 6, fontWeight: 700, fill: ev[4], textAnchor: ev[3] }, ev[1]))),
             E("text", { x: 4, y: 150, fontSize: 6.5, fill: CY }, "ECG"),
             E("text", { x: 328, y: _HL2.VY(124) + 8, fontSize: 5.8, fill: PUR, textAnchor: "end" }, "LV volume"),
@@ -48662,7 +48671,7 @@ function _Raw__HL_CycleViz({ frac, resting, includeExtra, phases }) {
 function _HL_CardiacCycleSection({ phases }) {
     const [speedId, setSpeedId] = useState("norm");
     const CYCLE_MS = _CYCLE_SPEEDS.find((sp) => sp.id === speedId).ms;
-    const REST_MS = CYCLE_MS * 0.4;
+    const REST_MS = 0;
     const TOTAL_MS = CYCLE_MS + REST_MS;
     const [t, setT] = useState(0);
     const [playing, setPlaying] = useState(true);
@@ -48707,20 +48716,20 @@ function _HL_CardiacCycleSection({ phases }) {
                             af.s3 = false;
                             af.s4 = false;
                         }
-                        if (!af.s1) {
+                        if (!af.s1 && msPos >= _hlPhaseBoundsMs[1]) {
                             af.s1 = true;
                             _playHeartSoundById(ctx, "S1");
                         }
-                        if (!af.s2 && msPos >= _hlPhaseBoundsMs[3]) {
+                        if (!af.s2 && msPos >= _hlPhaseBoundsMs[4]) {
                             af.s2 = true;
                             _playHeartSoundById(ctx, "S2");
                         }
                         if (includeExtraRef.current) {
-                            if (!af.s3 && msPos >= _hlPhaseBoundsMs[4]) {
+                            if (!af.s3 && msPos >= _hlPhaseBoundsMs[5]) {
                                 af.s3 = true;
                                 _playHeartSoundById(ctx, "S3");
                             }
-                            if (!af.s4 && msPos >= _hlPhaseBoundsMs[6]) {
+                            if (!af.s4 && msPos >= _hlPhaseBoundsMs[0]) {
                                 af.s4 = true;
                                 _playHeartSoundById(ctx, "S4");
                             }
@@ -48736,7 +48745,7 @@ function _HL_CardiacCycleSection({ phases }) {
         raf = requestAnimationFrame(tick);
         return () => cancelAnimationFrame(raf);
     }, [playing, speedId]);
-    const systolePct = (_hlPhaseBoundsMs[3] / _hlTotalMsRef) * 100;
+    const systolePct = (_hlPhaseBoundsMs[4] / _hlTotalMsRef) * 100;
     const frac = t <= 1 ? t : 1;
     const playheadPct = frac * 100;
     return (React.createElement(React.Fragment, null, React.createElement("div", { style: { background: _HeartLungSounds_colors.card, borderRadius: 12, padding: 14, marginBottom: 16, border: "1px solid #1e2d4a" } }, React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 } }, React.createElement("div", { style: { fontSize: 11, color: _HeartLungSounds_colors.accent5, fontWeight: 800, letterSpacing: 1 } }, "CARDIAC CYCLE TIMELINE (Approx. ", _hlTotalMsRef, "ms at 75bpm)"), React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } }, _CYCLE_SPEEDS.map((sp) => (React.createElement("button", { key: sp.id, onClick: () => setSpeedId(sp.id), style: {
@@ -65580,7 +65589,7 @@ const _SX_ORDER = {
     "U:anatomy": ["card-0", "card-xt", "card-ill-oe", "card-ill-st", "card-1", "card-2", "card-ill-ct", "card-3", "card-4"],
     "U:smallBowel": ["card-5", "card-4c", "card-x6", "card-0", "card-2", "card-3", "card-7", "card-9", "card-10", "card-10c"],
     "C:colon": ["card-ill-co", "card-0", "card-x9", "card-ami", "card-2", "card-x8", "card-4b", "card-4"],
-    "C:appendix": ["card-0", "card-4", "card-2"],
+    "C:appendix": ["card-a0", "card-0", "card-4", "card-2"],
     "C:anorectal": ["card-xd2", "card-0", "card-1", "card-x11", "card-2", "card-4", "card-x12", "card-x13", "card-5"]
 };
 function _SX_orderKids(tabEl, ids, ic) {
@@ -65701,9 +65710,10 @@ const _GIK_MERGES = {
             { ids: ["card-4", "card-5", "card-6", "card-x10"], title: "Colorectal Cancer", labels: ["Epidemiology & Genetics", "Presentation, Staging & Screening", "Surgery & Adjuvant Therapy", "Rectal Cancer: TME & Neoadjuvant"] }
         ],
         appendix: [
+            { ids: ["card-a0"], title: "Appendix Anatomy" },
             { ids: ["card-0", "card-1", "card-1b", "card-4b"], title: "Acute Appendicitis", labels: ["Pathophysiology & Signs", "Scoring & Management", "Diagnostic Pitfalls", "Special Populations"] },
-            { ids: ["card-2", "card-3", "card-3b"], title: "Appendiceal Tumours", labels: ["Carcinoid (NET)", "Mucinous Tumours", "Goblet Cell Adenocarcinoma"] },
-            { ids: ["card-4", "card-4c"], title: "Appendectomy", labels: ["Technique & Complications", "Operative Steps"] }
+            { ids: ["card-4", "card-4c"], title: "Appendectomy", labels: ["Technique & Complications", "Operative Steps"] },
+            { ids: ["card-2", "card-3", "card-3b"], title: "Appendiceal Tumours", labels: ["Carcinoid (NET)", "Mucinous Tumours", "Goblet Cell Adenocarcinoma"] }
         ],
         anorectal: [
             { ids: ["card-0", "card-0b", "card-0c"], title: "Haemorrhoids", labels: ["Features & Management", "Differential & Special Situations", "Non-Excisional Ladder"] },
@@ -67978,6 +67988,34 @@ function Surg2GIColonAnorectalModule({ initialTab, initialCard, onJump }) {
                 React.createElement(Ref, null, "Total mesorectal excision (Heald); NICE NG151; standard surgical/oncology teaching.")))),
         appendix: (React.createElement("div", null,
             React.createElement(SectionIntro, { tag: "Inflammation, Tumors & Technique", title: "The Appendix", accent: "#f97316", desc: "A small, blind-ending tube whose entire surgical relevance comes down to one recurring theme \u2014 what happens when its narrow lumen becomes obstructed, and how quickly that obstruction is recognised and relieved." }),
+            React.createElement(DiseaseCard, { id: "card-a0", title: "Appendix Anatomy \u2014 Orientation Before Pathology", icon: "\uD83E\uDDED", color: "#f97316", badges: [{ label: "Start here" }] },
+                React.createElement(Box, { color: "#f97316", title: "Why start with anatomy" }, "Every decision about the appendix is anatomy applied: why pain starts at the umbilicus, why the tip goes gangrenous first, why a retrocaecal appendix hides its signs, and why the mesoappendix is divided before the base. Learn the structure first and the rest of this tab reads as its consequences."),
+                React.createElement(H, { color: "#f97316" }, "At a Glance"),
+                [
+                    ["What it is", "A narrow, blind-ending muscular tube arising from the caecum. It has the same four layers as the colon wall, with abundant lymphoid follicles in the submucosa."],
+                    ["Length and lumen", "Average about 9 cm (range roughly 2 to 20 cm) with a lumen only a few millimetres wide, so a small faecolith or swollen follicle can block it."],
+                    ["Where it arises", "From the posteromedial wall of the caecum, about 2 cm below the ileocaecal valve, where the three taeniae coli converge."],
+                    ["Surface marking", "The base lies under McBurney's point: one third of the way along the line from the right anterior superior iliac spine to the umbilicus."],
+                    ["Embryology", "A midgut derivative. It starts as the tip of the caecal bud and is carried medially as the caecal wall grows unevenly, which is why the base stays fixed while the tip ends up in different places."],
+                    ["Peritoneal covering", "Intraperitoneal, hanging on its own mesentery. A retrocaecal appendix may lie partly below the peritoneum."],
+                    ["Lymphoid tissue", "Follicles are most numerous in adolescence and young adults and shrink with age. Follicular hyperplasia is the usual obstruction in the young, a faecolith in adults."],
+                    ["Function", "Part of the gut-associated lymphoid tissue with no vital role, so removal is safe."]
+                ].map(([l, v]) => React.createElement(Row, { key: l, label: l, val: v })),
+                React.createElement(H, { color: "#f97316" }, "Blood Supply, Drainage and Nerves"),
+                React.createElement(_SX_AppVascViz, null),
+                [
+                    ["Arterial chain", "Appendicular artery, from the ileocolic artery, from the superior mesenteric artery (SMA), from the abdominal aorta at about L1."],
+                    ["Venous drainage", "Appendicular vein, ileocolic vein, superior mesenteric vein, portal vein. This route explains pylephlebitis and liver abscess after perforation."],
+                    ["Lymph drainage", "Ileocolic nodes, then superior mesenteric nodes. High-risk appendiceal tumours need a right hemicolectomy because it removes the ileocolic pedicle and its nodes."],
+                    ["Nerve supply", "Sympathetic fibres from T10 (superior mesenteric plexus) and vagal parasympathetic fibres. Visceral pain enters at T10, so early inflammation is felt around the umbilicus. Once the parietal peritoneum of the right iliac fossa is inflamed (T12 and L1), the pain moves there and becomes sharp and localised."]
+                ].map(([l, v]) => React.createElement(Row, { key: l, label: l, val: v })),
+                React.createElement(H, { color: "#f97316" }, "The Mesoappendix"),
+                React.createElement(Row, { label: "What it is", val: "A triangular fold of peritoneum from the back of the terminal ileal mesentery that suspends the appendix, usually reaching almost to the tip. The appendicular artery and vein, lymphatics and nerves run in its free border." }),
+                React.createElement(Row, { label: "Why it matters in surgery", val: "The appendix is devascularised by ligating or sealing the mesoappendix, not by dividing bowel. A short or fat-laden mesoappendix tethers the appendix and hides the artery, and an inflamed one is friable and bleeds." }),
+                React.createElement(H, { color: "#f97316" }, "Position: Base Fixed, Tip Variable"),
+                React.createElement(_SX_AppPosViz, null),
+                React.createElement(Row, { label: "Finding it at operation", val: "The three taeniae coli converge on the base, so follow the anterior (free) taenia down the caecum until it leads to the appendix, whatever the tip is doing. The base is the one constant." }),
+                React.createElement(Tip, null, "Atypical symptoms and signs are usually a position problem. A retrocaecal tip gives flank pain and little guarding, a pelvic tip gives urinary and bowel symptoms, and a post-ileal tip gives vomiting and diarrhoea. Think of position whenever the examination does not match the story.")),
             React.createElement(DiseaseCard, { id: "card-0", title: "Acute Appendicitis \u2014 Pathophysiology & Clinical Signs", icon: "\uD83D\uDD25", color: "#f97316" },
                 React.createElement(_SX_AbdPainViz, null),
                 React.createElement(Box, { color: "#f97316", title: "Overview" }, "Luminal obstruction \u2014 most often a faecolith, but also lymphoid hyperplasia (particularly common in children and young adults following viral illness), or rarely a tumour or parasite."),
@@ -82802,7 +82840,7 @@ function _SX_Pick(a) {
     const arrow = (d, ch) => { const off = (d < 0 && i === 0) || (d > 0 && i === n - 1); return E("button", { className: "ob-btn", onClick: () => go(d), disabled: off, "aria-label": d < 0 ? "Previous" : "Next", style: { width: 30, height: 30, borderRadius: 9, cursor: off ? "default" : "pointer", fontSize: 17, fontWeight: 700, lineHeight: 1, color: off ? "#3b4457" : "#cbd5e1", background: "transparent", border: "1px solid " + (off ? "#1d2230" : "#2e3648") } }, ch); };
     const isCall = (p, k) => k === kv.length - 1 && (kv.length === 1 || /action|manage|treat|rule|key|pearl|answer|plan|next|result|outcome|use|test|do\b/i.test(p[0]));
     return E(_OB_Shell, { title: a.title, color: it.col },
-        E(_OB_Pills, { items: a.items.map((x, j) => ({ id: j, label: x.n, color: x.col })), value: i, onChange: setI, color: it.col }),
+        !a.nopills && E(_OB_Pills, { items: a.items.map((x, j) => ({ id: j, label: x.n, color: x.col })), value: i, onChange: setI, color: it.col }),
         a.bar && E(_SX_Rail, { items: a.items, i: i, setI: setI }),
         E("div", { onTouchStart: e => { tx.current = e.touches[0].clientX; }, onTouchEnd: e => { if (tx.current == null) return; const dx = e.changedTouches[0].clientX - tx.current; tx.current = null; if (Math.abs(dx) > 55) go(dx < 0 ? 1 : -1); } },
             a.svg && E("div", { className: "ob-morph" }, a.svg(it, i, setI)),
@@ -84496,16 +84534,128 @@ function _SX_StomaViz(p) {
 /* ---------- Appendicitis: Alvarado (MANTRELS) score ---------- */
 const _SX_ALV = [["M", "Migratory right iliac fossa pain", 1], ["A", "Anorexia", 1], ["N", "Nausea or vomiting", 1], ["T", "Tenderness in the right iliac fossa", 2], ["R", "Rebound tenderness", 1], ["E", "Elevated temperature (37.3 °C or more)", 1], ["L", "Leucocytosis (WBC above 10 × 10⁹/L)", 2], ["S", "Shift to the left (neutrophils above 75%)", 1]];
 function _SX_AlvaradoViz(p) {
-    const E = React.createElement;
+    const E = React.createElement, FF = "system-ui,-apple-system,'Segoe UI',sans-serif";
     const [ck, setCk] = React.useState((p && p.ck) || _SX_ALV.map(() => false));
     const sc = _SX_ALV.reduce((a, x, j) => a + (ck[j] ? x[2] : 0), 0);
-    const st = sc <= 3 ? ["Appendicitis unlikely", "#22c55e", "Consider other diagnoses; discharge with safety-netting or observe if symptoms persist."] : sc <= 6 ? ["Possible appendicitis", "#eab308", "Observe and repeat the examination, and image (ultrasound, or CT in adults) if still unclear."] : ["Appendicitis probable", "#ef4444", "Surgical review and appendicectomy; imaging first if the picture is atypical (women of reproductive age, the elderly)."];
+    const st = sc <= 3 ? ["Appendicitis unlikely", "#22c55e", "Consider other diagnoses; discharge with safety-netting or observe if symptoms persist."] : sc <= 6 ? ["Possible appendicitis", "#eab308", "Observe and repeat the examination, and image (ultrasound, or CT in adults) if still unclear."] : ["Appendicitis probable", "#ef4444", "Surgical review and appendicectomy are usually appropriate; image first if the picture is atypical."];
+    const G = [["Symptoms", "#38bdf8", [0, 1, 2]], ["Signs", "#f97316", [3, 4, 5]], ["Laboratory", "#a78bfa", [6, 7]]];
+    const tog = j => { try { navigator.vibrate && navigator.vibrate(6); } catch (e) { } setCk(ck.map((v, q) => q === j ? !v : v)); };
+    const R = 33, CIRC = 2 * Math.PI * R;
+    const ring = E("svg", { viewBox: "0 0 84 84", width: 84, height: 84, style: { flexShrink: 0 }, "aria-hidden": "true" },
+        E("circle", { cx: 42, cy: 42, r: R, fill: "none", stroke: "#1a1f2c", strokeWidth: 8 }),
+        E("circle", { cx: 42, cy: 42, r: R, fill: "none", stroke: st[1], strokeWidth: 8, strokeLinecap: "round", strokeDasharray: (CIRC * sc / 10) + " " + CIRC, transform: "rotate(-90 42 42)", style: { transition: "stroke-dasharray .45s cubic-bezier(.3,.7,.2,1), stroke .3s" } }),
+        E("text", { x: 42, y: 47, textAnchor: "middle", fontSize: 26, fontWeight: 800, fill: st[1], style: { fontFamily: FF } }, sc),
+        E("text", { x: 42, y: 62, textAnchor: "middle", fontSize: 9, fontWeight: 700, fill: "#64748b", style: { fontFamily: FF } }, "of 10"));
+    const zone = [["Unlikely", "0 to 3", "#22c55e", 4], ["Possible", "4 to 6", "#eab308", 3], ["Probable", "7 to 10", "#ef4444", 3]];
+    const row = j => { const x = _SX_ALV[j], on = ck[j], c = (G.find(g => g[2].indexOf(j) >= 0) || G[0])[1];
+        return E("button", { key: j, onClick: () => tog(j), "aria-pressed": on, style: { display: "flex", alignItems: "center", gap: 10, width: "100%", textAlign: "left", cursor: "pointer", marginBottom: 5, padding: "7px 10px 7px 8px", borderRadius: 11, fontFamily: FF, color: on ? "#fff" : "#c3ccdb", background: on ? c + "26" : "rgba(255,255,255,0.03)", border: "1px solid " + (on ? c : "#232a38"), transition: "background .2s, border-color .2s" } },
+            E("span", { style: { width: 26, height: 26, borderRadius: 8, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, background: on ? c : c + "22", color: on ? "#0b0c10" : c, transition: "background .2s" } }, on ? "\u2713" : x[0]),
+            E("span", { style: { flex: 1, minWidth: 0, fontSize: 12.6, fontWeight: 600, lineHeight: 1.35 } }, x[1]),
+            E("span", { style: { flexShrink: 0, fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 20, background: on ? c : "#1a1f2c", color: on ? "#0b0c10" : "#7d8aa0" } }, "+" + x[2])); };
     return E(_OB_Shell, { title: "Alvarado score: MANTRELS", color: st[1] },
-        _SX_ALV.map((x, j) => E(_SX_Tog, { key: j, on: ck[j], c: "#f97316", label: x[0] + " · " + x[1] + " (" + x[2] + ")", onClick: () => setCk(ck.map((v, q) => q === j ? !v : v)) })),
-        E("div", { style: { display: "flex", gap: 3, margin: "8px 0" } }, Array.from({ length: 10 }).map((_, k) => E("div", { key: k, style: { flex: 1, height: 9, borderRadius: 5, background: k < sc ? (k < 3 ? "#22c55e" : k < 6 ? "#eab308" : "#ef4444") : "#1a1b23", transition: "background .2s" } }))),
-        E("div", { style: { display: "flex", alignItems: "baseline", gap: 10 } }, E("span", { style: { fontSize: 30, fontWeight: 800, color: st[1], fontFamily: "Georgia,serif" } }, sc + " / 10"), E("span", { style: { fontSize: 13, fontWeight: 800, color: st[1], fontFamily: "system-ui" } }, st[0])),
-        E("div", { style: _OB_txt }, st[2]),
+        E("div", { style: { display: "flex", alignItems: "center", gap: 14, padding: "10px 12px", borderRadius: 14, background: st[1] + "12", border: "1px solid " + st[1] + "55", marginBottom: 12, transition: "background .3s, border-color .3s" } },
+            ring,
+            E("div", { style: { flex: 1, minWidth: 0 } },
+                E("div", { style: { fontSize: 15, fontWeight: 800, color: st[1], fontFamily: FF, lineHeight: 1.25 } }, st[0]),
+                E("div", { style: { marginTop: 4, fontSize: 12, lineHeight: 1.55, color: "#aab4c6", fontFamily: FF } }, st[2]))),
+        E("div", { style: { display: "flex", gap: 3, marginBottom: 3 } }, Array.from({ length: 10 }).map((_, k) => { const zc = k < 4 ? "#22c55e" : k < 7 ? "#eab308" : "#ef4444"; return E("div", { key: k, style: { flex: 1, height: 8, borderRadius: 4, background: k < sc ? zc : zc + "26", transition: "background .25s" } }); })),
+        E("div", { style: { display: "flex", gap: 3, marginBottom: 14 } }, zone.map((z, k) => E("div", { key: k, style: { flex: z[3], fontSize: 9.5, fontWeight: 700, fontFamily: FF, color: z[2], opacity: st[1] === z[2] ? 1 : 0.5, textAlign: "center", lineHeight: 1.3 } }, z[0], E("br"), E("span", { style: { fontWeight: 600, color: "#7d8aa0" } }, z[1])))),
+        G.map(g => { const got = g[2].reduce((a, j) => a + (ck[j] ? _SX_ALV[j][2] : 0), 0), mx = g[2].reduce((a, j) => a + _SX_ALV[j][2], 0);
+            return E("div", { key: g[0], style: { marginBottom: 6 } },
+                E("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", margin: "4px 2px 6px", fontFamily: FF } },
+                    E("span", { style: { fontSize: 10, fontWeight: 800, letterSpacing: "0.14em", color: g[1], textTransform: "uppercase" } }, g[0]),
+                    E("span", { style: { fontSize: 10.5, fontWeight: 700, color: "#7d8aa0" } }, got + " / " + mx)),
+                g[2].map(row)); }),
+        E("button", { onClick: () => setCk(_SX_ALV.map(() => false)), disabled: sc === 0, style: { marginTop: 4, width: "100%", padding: "8px", borderRadius: 10, cursor: sc === 0 ? "default" : "pointer", fontSize: 11.5, fontWeight: 800, fontFamily: FF, letterSpacing: "0.04em", color: sc === 0 ? "#475569" : "#cbd5e1", background: "transparent", border: "1px solid #232a38" } }, "Reset"),
         E(_SX_Foot, { t: "0 to 3: unlikely; 4 to 6: possible; 7 to 10: probable. Less accurate in women, children and the elderly; the Appendicitis Inflammatory Response and Adult Appendicitis scores are alternatives." }));
+}
+
+/* ---------- Appendix anatomy: blood supply chain (aorta to mesoappendix) ---------- */
+const _SX_APPV = [
+    { n: "Aorta", col: "#ef4444", head: "Abdominal aorta", sub: "Origin of the supply, about L1", t: "The superior mesenteric artery (SMA) leaves the front of the aorta at about L1, behind the neck of the pancreas. It feeds the whole midgut: distal duodenum, jejunum, ileum, appendix, caecum, ascending colon and the proximal two thirds of the transverse colon.", kv: [["Key point:", "The appendix is a midgut structure, so early inflammation is felt around the umbilicus (T10) before it moves to the right iliac fossa."]] },
+    { n: "SMA", col: "#f97316", head: "Superior mesenteric artery", sub: "Runs down in the root of the mesentery", t: "Gives off the inferior pancreaticoduodenal, jejunal and ileal branches, then three colic branches to the right colon.", kv: [["Colic branches:", "Middle colic, right colic (often absent or arising from the ileocolic) and ileocolic, from above downwards."], ["Key point:", "A right hemicolectomy divides the ileocolic, the right colic if present and the right branch of the middle colic near their origins."]] },
+    { n: "Ileocolic", col: "#fbbf24", head: "Ileocolic artery", sub: "The lowest right-sided branch of the SMA", t: "Runs down and to the right towards the ileocaecal junction and divides there.", kv: [["Branches:", "Ascending colic, anterior and posterior caecal, appendicular and ileal branches."], ["Key point:", "This is the pedicle taken in a right hemicolectomy for appendiceal cancer. The ileocolic vein runs with it and drains to the superior mesenteric vein."]] },
+    { n: "Appendicular", col: "#22c55e", head: "Appendicular artery", sub: "Branch of the ileocolic artery", t: "Arises from the ileocolic artery (or its posterior caecal branch), passes behind the terminal ileum and enters the mesoappendix near the base. It then runs in the free edge of the mesoappendix towards the tip.", kv: [["End artery:", "Little collateral supply. Thrombosis from inflammation or a tight faecolith leads to ischaemia and gangrene, usually at the tip first."], ["Accessory vessel:", "An accessory appendicular artery from a caecal branch is present in some patients, so the mesoappendix can still bleed after the main artery is tied."], ["Key point:", "Control the artery in the mesoappendix before dividing the base."]] },
+    { n: "Mesoappendix", col: "#38bdf8", head: "Mesoappendix", sub: "The mesentery that carries the vessels", t: "A triangular fold of peritoneum from the back of the terminal ileal mesentery that suspends the appendix, usually reaching almost to the tip. Artery, vein, lymphatics and nerves run in its free border.", kv: [["Veins:", "Appendicular vein, ileocolic vein, superior mesenteric vein, portal vein. Infected thrombus can travel to the liver (pylephlebitis, liver abscess)."], ["Lymph:", "Ileocolic nodes, then superior mesenteric nodes."], ["Key point:", "Lift the appendix by its tip, divide or seal the mesoappendix first, then deal with the base. A short or fat-laden mesoappendix tethers the appendix and hides the artery."]] },
+];
+function _sxAppVFig(i, col) {
+    const N = ["Aorta (L1)", "SMA", "Ileocolic a.", "Appendicular a.", "Mesoappendix"];
+    let s = `<defs>${_sxArrowDef("apvA", "#64748b")}</defs>`;
+    for (let k = 0; k < 5; k++) {
+        const x = 6 + k * 12, y = 14 + k * 40, on = k <= i, cur = k === i, c = _SX_APPV[k].col;
+        s += `<rect x="${x}" y="${y}" width="104" height="30" rx="8" fill="${c}" fill-opacity="${cur ? 0.92 : on ? 0.28 : 0.08}" stroke="${c}" stroke-opacity="${on ? 1 : 0.4}" stroke-width="${cur ? 2.2 : 1.2}"/>`;
+        s += _sxT(x + 52, y + 19, N[k], cur ? "#0b0c12" : on ? "#f1f5f9" : "#64748b", 9, "middle", 800);
+        if (k < 4) s += `<line x1="${x + 18}" y1="${y + 30}" x2="${x + 28}" y2="${y + 40}" stroke="${k < i ? "#e2e8f0" : "#475569"}" stroke-width="1.6" marker-end="url(#apvA)"/>`;
+    }
+    const lit = k => k <= i ? 1 : 0.3, hot = k => k === i;
+    s += `<g transform="translate(128 8)">`;
+    s += `<path d="M150 0 C146 20 136 38 118 54" stroke="#ef4444" stroke-width="${hot(1) || hot(2) ? 3.6 : 2.6}" stroke-opacity="${lit(1)}" fill="none" stroke-linecap="round"/>` + _sxT(146, 10, "from SMA", "#fca5a5", 7, "end", 700);
+    s += `<path d="M118 54 C102 60 90 66 78 74" stroke="#ef4444" stroke-width="2" stroke-opacity="${lit(2)}" fill="none" stroke-linecap="round"/>` + _sxT(76, 70, "ileal", "#fca5a5", 6.4, "end", 600);
+    s += `<path d="M118 54 C132 62 138 74 136 88" stroke="#ef4444" stroke-width="2" stroke-opacity="${lit(2)}" fill="none" stroke-linecap="round"/>` + _sxT(142, 78, "colic", "#fca5a5", 6.4, "start", 600);
+    s += `<path d="M6 92 C26 80 52 76 76 84 L76 124 C52 130 26 124 6 112 Z" fill="#e8b4a0" fill-opacity=".28" stroke="#e8b4a0" stroke-width="1.6"/>` + _sxT(38, 108, "Ileum", "#e8b4a0", 8, "middle", 700);
+    s += `<circle cx="110" cy="128" r="32" fill="#b8745c" fill-opacity=".38" stroke="#e8b4a0" stroke-width="1.8"/>` + _sxT(104, 114, "Caecum", "#f1d5c9", 8.4, "middle", 700);
+    const ap = "M122 158 C136 176 142 198 134 218";
+    s += `<path d="M126 160 C146 178 156 200 146 222 L134 222 C142 200 136 178 122 158 Z" fill="#38bdf8" fill-opacity="${hot(4) ? 0.6 : 0.2}" stroke="#38bdf8" stroke-opacity="${hot(4) ? 1 : 0.55}" stroke-width="${hot(4) ? 2 : 1}"/>`;
+    s += `<path d="${ap}" stroke="#0b0c12" stroke-width="10" fill="none" stroke-linecap="round"/><path d="${ap}" stroke="#e8b4a0" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+    s += `<path d="M78 112 C100 128 128 160 144 214" stroke="#ef4444" stroke-width="${hot(3) ? 4.2 : 2.6}" stroke-opacity="${lit(3)}" fill="none" stroke-linecap="round" stroke-dasharray="${i >= 3 ? "none" : "3 3"}"/>`;
+    s += `<g opacity="${lit(3)}">` + _sxT(120, 196, "Appendicular", "#86efac", 7.2, "end", 700) + _sxT(120, 205, "artery", "#86efac", 7.2, "end", 700) + `</g>`;
+    s += `<g opacity="${hot(4) ? 1 : 0.55}">` + _sxT(124, 218, "Meso-", "#7dd3fc", 7.2, "end", 700) + _sxT(124, 227, "appendix", "#7dd3fc", 7.2, "end", 700) + `</g>`;
+    s += `</g>`;
+    s += _sxT(170, 244, _SX_APPV[i].head, col, 9.5, "middle", 800);
+    return _sxS(340, 250, s);
+}
+function _SX_AppVascViz(p) {
+    const E = React.createElement;
+    return E(_SX_Pick, { title: "Blood supply: from the aorta to the appendix", items: _SX_APPV, s0: _SX_i(p, 3),
+        svg: (it, i) => _sxFigEl(_sxAppVFig(i, it.col)),
+        foot: "Chain to remember: aorta, SMA, ileocolic artery, appendicular artery, mesoappendix. Each step shows what that vessel is to the surgeon." });
+}
+
+/* ---------- Appendix anatomy: position of the tip (base fixed, tip variable) ---------- */
+const _SX_APPP = [
+    { n: "Retrocaecal", col: "#f97316", head: "Retrocaecal", sub: "Commonest, roughly 60 to 70%", t: "The tip lies behind the caecum or lower ascending colon, sometimes below the peritoneum (retroperitoneal).", kv: [["Why it matters:", "The caecum shields the inflamed tip from the abdominal wall, so right iliac fossa tenderness and guarding can be slight. Pain may be in the flank or back, and the psoas sign is often positive."], ["At operation:", "The caecum may need mobilising (cut the lateral peritoneal attachment) to see the tip. Retrograde appendicectomy, taking the base first and then freeing the tip, is the usual solution."], ["Key point:", "A retrocaecal appendix can give a normal-looking right iliac fossa and a late, atypical presentation."]] },
+    { n: "Pelvic", col: "#ec4899", head: "Pelvic", sub: "Second commonest, roughly 20 to 30%", t: "The tip hangs over the pelvic brim, close to the bladder, rectum and, in women, the right ovary and tube.", kv: [["Why it matters:", "Little abdominal tenderness. Suprapubic pain, diarrhoea, urinary frequency and tenderness on rectal or vaginal examination point to it. The obturator sign may be positive."], ["At operation:", "Often easy to deliver with the patient head-down. A pelvic abscess can point into the rectum or vagina."], ["Key point:", "Always consider gynaecological and urinary causes, because the signs overlap."]] },
+    { n: "Subcaecal", col: "#a78bfa", head: "Subcaecal", sub: "Uncommon", t: "The tip lies below the caecum, towards the right iliac fossa.", kv: [["Why it matters:", "Pain localises low in the right iliac fossa, often near McBurney's point, with classic signs."], ["Key point:", "Usually the easiest position to recognise and reach."]] },
+    { n: "Paracaecal", col: "#22c55e", head: "Paracaecal", sub: "Uncommon", t: "The tip lies alongside the caecum, in the right paracolic gutter.", kv: [["Why it matters:", "Tenderness sits further lateral and higher than McBurney's point. It can be mistaken for right upper or flank pathology."], ["Key point:", "Inflammation can track up the paracolic gutter."]] },
+    { n: "Pre-ileal", col: "#38bdf8", head: "Pre-ileal", sub: "Rare", t: "The tip lies in front of the terminal ileum, next to the anterior abdominal wall.", kv: [["Why it matters:", "Close to the parietal peritoneum, so tenderness and guarding in the right iliac fossa are usually obvious. It may irritate the ileum, causing vomiting or diarrhoea."], ["Key point:", "Peritonitis tends to declare itself early in this position."]] },
+    { n: "Post-ileal", col: "#06b6d4", head: "Post-ileal", sub: "Rare", t: "The tip lies behind the terminal ileum, between the ileum and the posterior wall.", kv: [["Why it matters:", "Hidden behind bowel, so abdominal signs are blunted while vomiting and diarrhoea can dominate."], ["Key point:", "A normal-looking right iliac fossa does not exclude it."]] },
+];
+function _sxAppPFig(i, col) {
+    const B = "156 130";
+    const P = [
+        "M156 130 C178 112 180 72 150 44",
+        "M156 130 C170 162 178 192 170 218",
+        "M156 130 C150 152 132 162 110 166",
+        "M148 132 C108 162 74 130 80 70",
+        "M156 130 C190 130 222 114 244 80",
+        "M156 130 C190 130 222 114 244 80"
+    ];
+    const tip = [[150, 44], [170, 218], [110, 166], [80, 70], [244, 80], [244, 80]][i];
+    const app = (c, w, o) => `<path d="${P[i]}" stroke="#0b0c12" stroke-width="${w + 4}" fill="none" stroke-linecap="round"/><path d="${P[i]}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round" opacity="${o || 1}"/>`;
+    const ileum = `<path d="M190 104 C230 98 280 108 332 92" stroke="#e8b4a0" stroke-opacity=".35" stroke-width="24" fill="none" stroke-linecap="round"/><path d="M190 104 C230 98 280 108 332 92" stroke="#e8b4a0" stroke-width="1.6" stroke-opacity=".9" fill="none" transform="translate(0 -12)"/><path d="M190 104 C230 98 280 108 332 92" stroke="#e8b4a0" stroke-width="1.6" stroke-opacity=".9" fill="none" transform="translate(0 12)"/>`;
+    let s = "";
+    s += `<path d="M96 8 L96 70 M164 8 L164 70" stroke="#e8b4a0" stroke-width="1.6" fill="none"/><rect x="96" y="8" width="68" height="62" fill="#b8745c" fill-opacity=".22"/>` + _sxT(130, 20, "Ascending colon", "#c9a08e", 7, "middle", 700);
+    s += `<path d="M20 196 C80 176 200 176 330 196" stroke="#64748b" stroke-width="1.3" fill="none" stroke-dasharray="4 3"/>` + _sxT(326, 190, "Pelvic brim", "#64748b", 7, "end", 600) + _sxT(326, 214, "PELVIS", "#475569", 7, "end", 700);
+    s += [0, 1, 2, 3, 4].map(k => `<path d="${P[k]}" stroke="#64748b" stroke-width="1.3" fill="none" stroke-dasharray="3 3" stroke-opacity="${k === i ? 0 : 0.6}"/>`).join("");
+    if (i === 0 || i === 5) s += app(col, 8, 1);
+    s += ileum + _sxT(262, 134, "Terminal ileum", "#e8b4a0", 8, "middle", 700);
+    s += `<circle cx="130" cy="96" r="40" fill="#b8745c" fill-opacity="${i === 0 ? 0.92 : 0.5}" stroke="#e8b4a0" stroke-width="2"/>`;
+    s += `<path d="M104 70 C116 90 116 112 106 126 M156 70 C148 90 148 112 156 124" stroke="#d9a08a" stroke-opacity=".6" stroke-width="1.4" fill="none"/>` + _sxT(126, 100, "Caecum", "#fff", 9, "middle", 700);
+    if (i === 5) s += ileum;
+    if (i !== 0 && i !== 5) s += app(col, 8, 1);
+    if (i === 4) s += ``;
+    s += `<circle cx="${tip[0]}" cy="${tip[1]}" r="5" fill="${col}" stroke="#fff" stroke-width="1.6"/>`;
+    s += `<circle cx="156" cy="130" r="4.8" fill="#fff" stroke="#0b0c12" stroke-width="1.4"/>`;
+    s += _sxCall(22, 150, 152, 132, "Base: always here", "#fff", "start", "where the taeniae meet");
+    s += _sxT(170, 244, ["Behind the caecum", "Hanging into the pelvis", "Below the caecum", "Lateral, in the paracolic gutter", "In front of the terminal ileum", "Behind the terminal ileum"][i], col, 9.5, "middle", 800);
+    s += _sxT(8, 244, "tip variable", "#64748b", 6.6, "start", 600);
+    return _sxS(340, 252, s);
+}
+function _SX_AppPosViz(p) {
+    const E = React.createElement;
+    return E(_SX_Pick, { title: "Where the tip lies", items: _SX_APPP, s0: _SX_i(p, 0),
+        svg: (it, i) => _sxFigEl(_sxAppPFig(i, it.col)),
+        foot: "The base is always on the posteromedial caecum, where the three taeniae coli meet, about 2 cm below the ileocaecal valve. Follow the anterior taenia down to find the appendix, whatever the tip is doing. Frequencies are approximate and vary between series." });
 }
 
 /* ---------- Appendix tab: abdominal pain by region (nine-region framework) ---------- */
@@ -84525,13 +84675,15 @@ function _sxAbdFig(i, col) {
     const CX = [60, 140, 200, 280], CY = [22, 92, 164, 236];
     const torso = "M80 22 C70 66 74 108 86 150 C96 188 90 214 102 234 L238 234 C250 214 244 188 254 150 C266 108 270 66 260 22 Z";
     const NM = [["Right", "hypochondrium"], ["Epigastrium", ""], ["Left", "hypochondrium"], ["Right", "flank"], ["Umbilical", ""], ["Left", "flank"], ["Right", "iliac fossa"], ["Hypogastrium", ""], ["Left", "iliac fossa"]];
-    const cxs = [100, 170, 240], cys = [58, 128, 200];
+    const cxs = [101, 170, 240], cys = [60, 130, 202];
+    const FF = "font-family:system-ui,-apple-system,'Segoe UI',sans-serif";
+    const tx = (x, y, t, fill, size, w, anchor, halo) => `<text x="${x}" y="${y}" text-anchor="${anchor || "middle"}" font-size="${size}" font-weight="${w}" fill="${fill}" style="${FF}"${halo ? ` stroke="#0b0c12" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"` : ""}>${t}</text>`;
     let s = `<defs><clipPath id="abdClip"><path d="${torso}"/></clipPath>${_sxG("abSk", "#2b3345", "#171b26", true)}</defs>`;
-    s += _sxT(170, 12, "Nine-region map of the abdomen (front view)", "#e2e8f0", 10, "middle", 700);
+    s += tx(66, 11, "PATIENT'S RIGHT", "#64748b", 5.6, 700, "start") + tx(274, 11, "LEFT", "#64748b", 5.6, 700, "end");
     s += `<path d="${torso}" fill="url(#abSk)" stroke="#64748b" stroke-width="2"/>`;
-    s += `<path d="M84 24 C96 70 130 92 170 94 C210 92 244 70 256 24" fill="none" stroke="#94a3b8" stroke-opacity=".35" stroke-dasharray="3 3"/>`;
-    s += `<g clip-path="url(#abdClip)"><rect x="${CX[c]}" y="${CY[r]}" width="${CX[c + 1] - CX[c]}" height="${CY[r + 1] - CY[r]}" fill="${col}" fill-opacity=".30"/></g>`;
-    s += `<g opacity=".72">`
+    s += `<path d="M84 24 C96 70 130 92 170 94 C210 92 244 70 256 24" fill="none" stroke="#94a3b8" stroke-opacity=".3" stroke-dasharray="3 3"/>`;
+    s += `<g clip-path="url(#abdClip)"><rect x="${CX[c]}" y="${CY[r]}" width="${CX[c + 1] - CX[c]}" height="${CY[r + 1] - CY[r]}" fill="${col}" fill-opacity=".38"/></g>`;
+    s += `<g opacity=".62">`
         + `<path d="M84 38 C112 28 168 36 182 52 C176 80 132 90 96 80 C84 68 80 52 84 38Z" fill="#b45309" fill-opacity=".55" stroke="#f59e0b" stroke-width="1.2"/>`
         + `<ellipse cx="134" cy="87" rx="6" ry="9" fill="#22c55e" fill-opacity=".75" stroke="#16a34a"/>`
         + `<path d="M186 46 C220 40 248 58 242 86 C232 102 204 94 196 76 C190 64 184 56 186 46Z" fill="#fb7185" fill-opacity=".5" stroke="#fb7185" stroke-width="1.2"/>`
@@ -84546,21 +84698,29 @@ function _sxAbdFig(i, col) {
         + `<path d="M170 62 L170 150 M170 150 L158 176 M170 150 L182 176" stroke="#ef4444" stroke-width="3" stroke-opacity=".55" fill="none" stroke-linecap="round"/>`
         + `</g>`;
     s += `<circle cx="170" cy="128" r="3" fill="#0b0c12" stroke="#94a3b8"/>`;
-    s += _sxL(140, 22, 140, 236, "#cbd5e1", 1, "4 3") + _sxL(200, 22, 200, 236, "#cbd5e1", 1, "4 3") + _sxL(60, 92, 280, 92, "#cbd5e1", 1, "4 3") + _sxL(60, 164, 280, 164, "#cbd5e1", 1, "4 3");
+    s += _sxL(140, 22, 140, 236, "#cbd5e1", 1, "4 3") + _sxL(200, 22, 200, 236, "#cbd5e1", 1, "4 3") + _sxL(66, 92, 274, 92, "#cbd5e1", 1, "4 3") + _sxL(66, 164, 274, 164, "#cbd5e1", 1, "4 3");
     for (let k = 0; k < 9; k++) {
-        const on = k === i, x = cxs[k % 3], y = cys[Math.floor(k / 3)] + (k === 4 ? 14 : 0), a = NM[k][0], b = NM[k][1];
-        s += _sxT(x, y + (b ? -3 : 3), a, on ? "#fff" : "#94a3b8", on ? 7.8 : 7, "middle", on ? 800 : 600) + (b ? _sxT(x, y + 7, b, on ? "#fff" : "#94a3b8", on ? 7.8 : 7, "middle", on ? 800 : 600) : "");
+        const on = k === i, x = cxs[k % 3], y = cys[Math.floor(k / 3)] + (k === 4 ? 12 : 0), a = NM[k][0], b = NM[k][1];
+        const f = on ? "#fff" : "#b6c1d3", sz = on ? 7.8 : 7.1, w = on ? 800 : 700;
+        s += tx(x, y + (b ? -2 : 3), a, f, sz, w, "middle", true) + (b ? tx(x, y + 8, b, f, sz, w, "middle", true) : "");
     }
-    s += _sxT(6, 132, "PATIENT'S", "#64748b", 7.4, "start", 700) + _sxT(6, 142, "RIGHT", "#64748b", 7.4, "start", 700) + _sxT(334, 132, "PATIENT'S", "#64748b", 7.4, "end", 700) + _sxT(334, 142, "LEFT", "#64748b", 7.4, "end", 700);
-    s += _sxLeg(8, 190, [["#f59e0b", "Liver"], ["#22c55e", "Gallbladder"], ["#fb7185", "Stomach"], ["#fbbf24", "Pancreas"]]);
-    s += _sxLeg(262, 190, [["#a78bfa", "Colon"], ["#f97316", "Appendix"], ["#38bdf8", "Kidney, bladder"], ["#ef4444", "Aorta"]]);
-    s += _sxT(170, 252, NM[i][1] ? NM[i][0] + " " + NM[i][1] : NM[i][0], col, 9.5, "middle", 800);
-    return _sxS(340, 258, s);
+    const LG = [["#f59e0b", "Liver"], ["#22c55e", "Gallbladder"], ["#fb7185", "Stomach"], ["#fbbf24", "Pancreas"], ["#a78bfa", "Colon"], ["#f97316", "Appendix"], ["#38bdf8", "Kidney"], ["#38bdf8", "Bladder"], ["#ef4444", "Aorta"], ["#7c3aed", "Spleen"]];
+    LG.forEach((q, k) => { const x = 62 + (k % 5) * 44.5, y = 252 + Math.floor(k / 5) * 12; s += `<circle cx="${x + 2.5}" cy="${y - 2}" r="2.5" fill="${q[0]}"/>` + tx(x + 7, y, q[1], "#94a3b8", 5.9, 600, "start"); });
+    s += tx(170, 280, NM[i][1] ? NM[i][0] + " " + NM[i][1] : NM[i][0], col, 9, 800, "middle");
+    return `<svg viewBox="58 2 224 288" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nine-region map of the abdomen" style="display:block;max-width:420px;margin:0 auto">${s}</svg>`;
 }
 function _SX_AbdPainViz(p) {
     const E = React.createElement;
-    return E(_SX_Pick, { title: "Abdominal pain: where it is tells you what it is", items: _SX_ABD, s0: _SX_i(p, 6),
-        svg: (it, i) => _sxFigEl(_sxAbdFig(i, it.col)),
+    return E(_SX_Pick, { title: "Abdominal pain: where it is tells you what it is", items: _SX_ABD, s0: _SX_i(p, 6), nopills: true,
+        svg: (it, i, setI) => E("div", null,
+            E("div", { style: { fontSize: 9.5, fontWeight: 800, letterSpacing: "0.14em", color: "#64748b", textAlign: "center", fontFamily: "system-ui", margin: "0 0 2px" } }, "TAP A REGION ON THE BODY"),
+            E("div", { style: { cursor: "pointer", WebkitTapHighlightColor: "transparent" }, onClick: e => {
+                const bx = e.currentTarget.getBoundingClientRect(), sv = e.currentTarget.querySelector("svg"); if (!sv) return;
+                const r = sv.getBoundingClientRect(), X = 58 + (e.clientX - r.left) / r.width * 224, Y = 2 + (e.clientY - r.top) / r.height * 288;
+                if (X < 66 || X > 274 || Y < 22 || Y > 236) return;
+                const k = (Y < 92 ? 0 : Y < 164 ? 1 : 2) * 3 + (X < 140 ? 0 : X < 200 ? 1 : 2);
+                if (k !== i) { try { navigator.vibrate && navigator.vibrate(8); } catch (err) { } setI(k); }
+            } }, _sxFigEl(_sxAbdFig(i, it.col)))),
         foot: "Why this works: foregut pain is felt in the epigastrium, midgut pain around the umbilicus and hindgut pain in the suprapubic area. Once the parietal peritoneum is inflamed, the pain moves to sit over the organ itself. Heart, lung and metabolic causes (myocardial infarction, pulmonary embolism, diabetic ketoacidosis, lower lobe pneumonia) can all mimic an acute abdomen." });
 }
 
