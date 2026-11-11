@@ -12504,7 +12504,111 @@ function MzReviseBtn({ topic, moduleId, mod, accent }) {
                     shown.map(e => row(e, e.title)),
                     ql && shown.length === 0 && React.createElement("div", { style: { color: "#6b7280", fontSize: 13, textAlign: "center", padding: 24 } }, "No matching topics")))));
 }
+/* ===== Contents drawer (hamburger + off-canvas side panel) for every module ===== */
+function MzContentsBtn({ accent, onClick }) {
+    return React.createElement("button", { onClick, "aria-label": "Open contents", title: "Contents", style: {
+            background: `${accent}18`, border: `1px solid ${accent}44`, borderRadius: 8, width: 34, height: 34, cursor: "pointer",
+            flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
+            position: "relative", zIndex: 2, padding: 0
+        } }, [0, 1, 2].map(i => React.createElement("span", { key: i, style: { display: "block", width: 16, height: 2, borderRadius: 2, background: accent } })));
+}
+function MzContentsDrawer({ open, onClose, topic, moduleId, mod, accent, onJump }) {
+    const PAL = [accent, "#7fb3c8", "#9d9ae0", "#e0b36a", "#7fcf9b", "#e08a9a", "#c79bf0", "#6ad0d0"];
+    const ROM = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII", "XIII", "XIV", "XV", "XVI"];
+    const [snap, setSnap] = React.useState({ tabs: [], cards: [], active: -1 });
+    const scan = React.useCallback(() => {
+        const root = document.getElementById("caliph-module-scroll");
+        if (!root) return { tabs: [], cards: [], active: -1 };
+        let strip = root.querySelector("[data-mz-tabs]");
+        if (!strip) {
+            /* fallback for modules whose tab bar is not tagged: first row of 3+ short buttons near the top, outside any card */
+            const rt = root.getBoundingClientRect().top, cs = root.querySelectorAll("div");
+            for (let i = 0; i < cs.length && i < 900; i++) {
+                const d = cs[i], k = d.children; if (k.length < 3 || k.length > 14 || d.closest("[data-mz-card]")) continue;
+                let allBtn = true; for (let q = 0; q < k.length; q++) { const t = (k[q].textContent || "").trim(); if (k[q].tagName !== "BUTTON" || t.length < 2 || t.length > 42) { allBtn = false; break; } }
+                if (!allBtn) continue;
+                if (d.getBoundingClientRect().top - rt > 460) break;
+                strip = d; break;
+            }
+        }
+        const els = strip ? Array.prototype.slice.call(strip.children).filter(c => (c.textContent || "").trim()) : [];
+        const sig = c => { const s = getComputedStyle(c); return s.backgroundColor + "|" + s.borderTopColor + "|" + s.color; };
+        const cnt = {}; els.forEach(c => { const k = sig(c); cnt[k] = (cnt[k] || 0) + 1; });
+        let active = -1; if (els.length > 2) { const odd = els.map((c, i) => [i, cnt[sig(c)]]).filter(x => x[1] === 1); if (odd.length === 1) active = odd[0][0]; }
+        const tabs = els.map(c => { const t = (c.textContent || "").trim(); const m = t.match(/^([\p{Extended_Pictographic}\uFE0F\u200d]+)\s*(.*)$/u); return { el: c, icon: m ? m[1] : "", label: (m ? m[2] : t) || t }; });
+        const seen = {}, cards = [];
+        root.querySelectorAll("[data-mz-card]").forEach(el => {
+            let t = (el.getAttribute("data-mz-title") || "").trim();
+            if (!t) { const h = el.children[1] || el.children[0]; t = h ? (h.textContent || "").trim().slice(0, 90) : ""; }
+            if (!t || seen[t]) return; seen[t] = 1; cards.push({ el, title: t });
+        });
+        if (!cards.length) {
+            /* single-page modules: outline from the page's own headings (large bold leaf text outside buttons) */
+            const all = root.querySelectorAll("div,h1,h2,h3,h4,span"); let nHead = 0;
+            for (let i = 0; i < all.length && i < 6000 && nHead < 60; i++) {
+                const el = all[i]; if (el.childElementCount > 0) continue;
+                const t = (el.textContent || "").trim(); if (t.length < 4 || t.length > 90 || seen[t]) continue;
+                if (el.closest("button") || el.closest("[data-mz-tabs]") || el.closest("svg")) continue;
+                const cs = getComputedStyle(el), fs = parseFloat(cs.fontSize) || 0, fw = parseInt(cs.fontWeight, 10) || 400;
+                if (fs >= 15 && fw >= 600) { seen[t] = 1; nHead++; cards.push({ el, title: t, scrollOnly: true }); }
+            }
+        }
+        return { tabs, cards, active };
+    }, []);
+    React.useEffect(() => { if (open) setSnap(scan()); }, [open]);
+    React.useEffect(() => { if (!open) return; const k = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", k); return () => window.removeEventListener("keydown", k); }, [open]);
+    const goTab = (i) => {
+        const t = snap.tabs[i]; if (!t) return;
+        try { navigator.vibrate && navigator.vibrate(8); } catch (e) { }
+        if (i !== snap.active) t.el.click();
+        const root = document.getElementById("caliph-module-scroll"); if (root) root.scrollTo({ top: 0 });
+        setTimeout(() => setSnap(scan()), 260);
+    };
+    const goCard = (c) => {
+        onClose();
+        const el = c.el; if (!el || !el.isConnected) return;
+        if (!c.scrollOnly && !el.querySelector(".cvs-tab-content")) { const h = el.children[1] || el.children[0]; if (h) h.click(); }
+        setTimeout(() => { try { el.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { } }, 140);
+    };
+    const others = topic && topic.modules ? topic.modules : [];
+    const FS = "'Spectral',Georgia,serif";
+    return React.createElement("div", { style: { position: "absolute", inset: 0, zIndex: 60, pointerEvents: open ? "auto" : "none" }, "aria-hidden": !open },
+        React.createElement("div", { onClick: onClose, style: { position: "absolute", inset: 0, background: "rgba(0,0,0,0.62)", opacity: open ? 1 : 0, transition: "opacity .25s" } }),
+        React.createElement("aside", { role: "dialog", "aria-label": "Contents", style: {
+                position: "absolute", top: 0, bottom: 0, left: 0, width: "min(86%, 360px)", background: "#0d0d10", borderRight: `1px solid ${accent}33`,
+                boxShadow: open ? "8px 0 40px rgba(0,0,0,.7)" : "none", transform: open ? "translateX(0)" : "translateX(-102%)",
+                transition: "transform .3s cubic-bezier(.32,.72,.24,1)", display: "flex", flexDirection: "column"
+            } },
+            React.createElement("div", { style: { padding: "20px 18px 14px", borderBottom: "1px solid #1d1d24", display: "flex", alignItems: "flex-start", gap: 10 } },
+                React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                    React.createElement("div", { style: { fontFamily: FS, fontSize: 25, color: "#f1ebdf", lineHeight: 1.15 } }, "Contents"),
+                    React.createElement("div", { style: { fontFamily: FS, fontStyle: "italic", fontSize: 12.5, color: "#7d8696", marginTop: 5, lineHeight: 1.4 } }, (mod ? mod.title : "") + (snap.tabs.length ? " \u00B7 " + snap.tabs.length + " sections" : ""))),
+                React.createElement("button", { onClick: onClose, "aria-label": "Close contents", style: { background: "transparent", border: "1px solid #2a2a33", borderRadius: 8, color: "#9aa3b2", width: 30, height: 30, fontSize: 15, cursor: "pointer", flexShrink: 0 } }, "\u2715")),
+            React.createElement("div", { style: { flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 24 } },
+                snap.tabs.length === 0 && snap.cards.length === 0 && React.createElement("div", { style: { padding: "18px", fontFamily: FS, fontSize: 13, color: "#7d8696", lineHeight: 1.6 } }, "This module is a single page. Scroll to move through it."),
+                snap.tabs.map((t, i) => {
+                    const c = PAL[i % PAL.length], on = i === snap.active;
+                    return React.createElement("div", { key: i, style: { borderBottom: "1px solid #17171d" } },
+                        React.createElement("button", { onClick: () => goTab(i), style: { width: "100%", textAlign: "left", cursor: "pointer", background: on ? c + "12" : "transparent", border: "none", borderLeft: "3px solid " + (on ? c : "transparent"), padding: "13px 16px 13px 15px", display: "flex", alignItems: "center", gap: 10, fontFamily: FS } },
+                            React.createElement("span", { style: { fontSize: 15, color: c, minWidth: 30, letterSpacing: "0.02em" } }, (ROM[i] || (i + 1)) + "."),
+                            React.createElement("span", { style: { flex: 1, minWidth: 0, fontSize: 16, color: on ? "#fff" : "#d9d3c4", lineHeight: 1.3 } }, (t.icon ? t.icon + " " : "") + t.label),
+                            React.createElement("span", { style: { fontSize: 11, color: on ? c : "#4b5262", transform: on ? "rotate(90deg)" : "none", transition: "transform .2s" } }, "\u25B6")),
+                        on && snap.cards.length > 0 && React.createElement("div", { style: { padding: "0 0 10px" } }, snap.cards.map((cd, j) => React.createElement("button", { key: j, onClick: () => goCard(cd), style: { width: "100%", textAlign: "left", cursor: "pointer", background: "transparent", border: "none", padding: "9px 16px 9px 18px", display: "flex", gap: 10, fontFamily: FS } },
+                            React.createElement("span", { style: { fontSize: 12, color: "#5d6577", minWidth: 30, paddingTop: 2 } }, j + 1),
+                            React.createElement("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, color: "#c9ccd6", lineHeight: 1.35 } }, cd.title)))));
+                }),
+                snap.tabs.length === 0 && snap.cards.length > 0 && React.createElement("div", { style: { padding: "6px 0 10px" } }, snap.cards.map((cd, j) => React.createElement("button", { key: j, onClick: () => goCard(cd), style: { width: "100%", textAlign: "left", cursor: "pointer", background: "transparent", border: "none", padding: "10px 16px", display: "flex", gap: 10, fontFamily: FS } },
+                    React.createElement("span", { style: { fontSize: 12, color: "#5d6577", minWidth: 24, paddingTop: 2 } }, j + 1),
+                    React.createElement("span", { style: { flex: 1, minWidth: 0, fontSize: 15, color: "#d9d3c4", lineHeight: 1.35 } }, cd.title)))),
+                others.length > 1 && React.createElement("div", { style: { marginTop: 10, borderTop: "1px solid #1d1d24" } },
+                    React.createElement("div", { style: { padding: "16px 18px 6px", fontFamily: FS, fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", color: accent } }, "More in " + (topic.label || "this topic")),
+                    others.map(m => React.createElement("button", { key: m.id, onClick: () => { if (m.id === moduleId) { onClose(); return; } onClose(); onJump && onJump({ topicId: topic.id, moduleId: m.id }); }, style: { width: "100%", textAlign: "left", cursor: "pointer", background: m.id === moduleId ? accent + "12" : "transparent", border: "none", borderLeft: "3px solid " + (m.id === moduleId ? accent : "transparent"), padding: "11px 16px 11px 15px", display: "flex", alignItems: "center", gap: 10, fontFamily: FS } },
+                        React.createElement("span", { style: { fontSize: 15, minWidth: 26 } }, m.icon || ""),
+                        React.createElement("span", { style: { flex: 1, minWidth: 0, fontSize: 14.5, color: m.id === moduleId ? "#fff" : "#c9ccd6", lineHeight: 1.35 } }, m.title)))))));
+}
+
 function ActiveModuleScreen({ moduleId, topicId, onBack, initialTab, initialCard, onJump }) {
+    const [mzDrawer, setMzDrawer] = React.useState(false);
     useEffect(() => { if (window.__mzFocus) { const f = window.__mzFocus; window.__mzFocus = null; _mzRunFocus(f); } }, []);
     const topic = TOPICS.find(t => t.id === topicId);
     const mod = topic ? topic.modules.find(m => m.id === moduleId) : null;
@@ -12512,7 +12616,7 @@ function ActiveModuleScreen({ moduleId, topicId, onBack, initialTab, initialCard
     const Comp = SPECIALIST_COMPONENTS[moduleId];
     if (!Comp)
         return (React.createElement("div", { style: { flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: BG, color: "#444", fontFamily: FF } }, "Module not found"));
-    return (React.createElement("div", { style: { display: "flex", flexDirection: "column", height: "100vh", background: BG } }, React.createElement("div", { style: {
+    return (React.createElement("div", { style: { display: "flex", flexDirection: "column", height: "100vh", background: BG, position: "relative", overflow: "hidden" } }, React.createElement("div", { style: {
             flexShrink: 0,
             background: "rgba(0,0,0,0.97)", backgroundImage: PATTERN, backgroundSize: "80px 80px",
             borderBottom: `1px solid ${ac}33`, padding: "12px 16px",
@@ -12531,7 +12635,7 @@ function ActiveModuleScreen({ moduleId, topicId, onBack, initialTab, initialCard
             width: 34, height: 34, cursor: "pointer", fontFamily: FF,
             flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
             position: "relative", zIndex: 2,
-        } }, "\u2039"), React.createElement("div", { style: {
+        } }, "\u2039"), React.createElement(MzContentsBtn, { accent: ac, onClick: () => setMzDrawer(true) }), React.createElement("div", { style: {
             flex: 1, minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             position: "relative", zIndex: 1,
         } }, mod && (React.createElement("div", { style: {
@@ -12544,7 +12648,7 @@ function ActiveModuleScreen({ moduleId, topicId, onBack, initialTab, initialCard
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
             background: `linear-gradient(90deg,#fff,${ac})`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-        } }, mod ? mod.title : moduleId)), React.createElement(MzReviseBtn, { topic, moduleId, mod, accent: ac }), React.createElement(MzBgToggle, { accent: ac })), React.createElement("div", { id: "caliph-module-scroll", style: { flex: 1, overflowY: "auto" } }, React.createElement(CaliphModuleWrapper, { topicAccent: ac, moduleId: moduleId }, React.createElement(Comp, { key: `${moduleId}:${initialTab || ""}:${initialCard || ""}`, initialTab: initialTab, initialCard: initialCard, onJump: onJump })))));
+        } }, mod ? mod.title : moduleId)), React.createElement(MzReviseBtn, { topic, moduleId, mod, accent: ac }), React.createElement(MzBgToggle, { accent: ac })), React.createElement("div", { id: "caliph-module-scroll", style: { flex: 1, overflowY: "auto" } }, React.createElement(CaliphModuleWrapper, { topicAccent: ac, moduleId: moduleId }, React.createElement(Comp, { key: `${moduleId}:${initialTab || ""}:${initialCard || ""}`, initialTab: initialTab, initialCard: initialCard, onJump: onJump }))), React.createElement(MzContentsDrawer, { open: mzDrawer, onClose: () => setMzDrawer(false), topic: topic, moduleId: moduleId, mod: mod, accent: ac, onJump: onJump })));
 }
 function CVSPhysiologyBasics({ initialTab, initialCard, onJump }) {
     const [tab, setTab] = useState(initialTab || "story");
@@ -12626,7 +12730,7 @@ function CVSPhysiologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -12726,7 +12830,7 @@ function CVSPhysiologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#eab308 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDEC0 Cardiovascular Physiology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDEC0 Cardiovascular Physiology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -13783,7 +13887,7 @@ function CVSComprehensive({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -14390,7 +14494,7 @@ function CVSComprehensive({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#ff9f1c 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "CVS Deep Dive"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "CVS Deep Dive"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -14492,7 +14596,7 @@ function CNSBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -14726,7 +14830,7 @@ function CNSBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f59e0b 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "CNS Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "CNS Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -15104,7 +15208,7 @@ function CNSComprehensive({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -16121,7 +16225,7 @@ function CNSComprehensive({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#4cc9f0 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "CNS Deep Dive"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "CNS Deep Dive"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -16222,7 +16326,7 @@ function DermatologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -16365,7 +16469,7 @@ function DermatologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#c9a05a 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Dermatology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Dermatology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -16694,7 +16798,7 @@ function DermComprehensive({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -16800,7 +16904,7 @@ function DermComprehensive({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f472b6 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Dermatology Deep Dive"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Dermatology Deep Dive"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -17821,7 +17925,7 @@ function LiverBasicsGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -17904,7 +18008,7 @@ function LiverBasicsGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#eab308 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Liver Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Liver Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -18027,7 +18131,7 @@ function BloodBasicsGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -18106,7 +18210,7 @@ function BloodBasicsGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#fbbf24 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Blood Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Blood Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -18222,7 +18326,7 @@ function PsychiatryBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -18306,7 +18410,7 @@ function PsychiatryBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#0096c7 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Psychiatry Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Psychiatry Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -18422,7 +18526,7 @@ function ToxicologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -18499,7 +18603,7 @@ function ToxicologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#22577a 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Toxicology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Toxicology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -18600,7 +18704,7 @@ function PathologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#d4a017" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(16,16,16,0.9) 0%, rgba(8,8,8,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -18822,7 +18926,7 @@ function PathologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Pathology & Immunology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Pathology & Immunology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -18938,7 +19042,7 @@ function GeneticsGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -19012,7 +19116,7 @@ function GeneticsGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#22c55e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Medical Genetics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Medical Genetics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -19134,7 +19238,7 @@ function BiochemistryGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -19221,7 +19325,7 @@ function BiochemistryGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f59e0b 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Biochemistry"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Biochemistry"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -19439,7 +19543,7 @@ function HistologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#d4a017" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(16,16,16,0.9) 0%, rgba(8,8,8,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -19596,7 +19700,7 @@ function HistologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Histology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Histology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -19693,7 +19797,7 @@ function AntibioticsMasterGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#d4a017" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(16,16,16,0.9) 0%, rgba(8,8,8,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -19856,7 +19960,7 @@ function AntibioticsMasterGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Antibiotics Master Guide"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Antibiotics Master Guide"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -20754,7 +20858,7 @@ function ImagingBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Imaging Modalities"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Imaging Modalities"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -20910,7 +21014,7 @@ function BloodTestsBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Blood Tests Interpretation"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Blood Tests Interpretation"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: isActive ? "7px 12px 5px" : "5px 11px",
@@ -26777,7 +26881,7 @@ function OncologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -26880,7 +26984,7 @@ function OncologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#a78bfa 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Oncology Basics"), React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Oncology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => setTab(t.id), style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -30364,7 +30468,7 @@ function RespiratoryBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -30506,7 +30610,7 @@ function RespiratoryBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#38bdf8 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Respiratory Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Respiratory Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -30734,7 +30838,7 @@ React.createElement(DiseaseCard,{id:"card-cop",title:"Cryptogenic Organizing Pne
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#34d399 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDEC1 Respiratory Medicine"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDEC1 Respiratory Medicine"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -35710,7 +35814,7 @@ function EndocrineBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -35816,7 +35920,7 @@ function EndocrineBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f97316 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDD8B Endocrinology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDD8B Endocrinology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -39065,7 +39169,7 @@ function ImmuneSystem({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -39190,7 +39294,7 @@ function ImmuneSystem({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#00d4ff 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDDEC Immune System"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDDEC Immune System"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -41032,7 +41136,7 @@ function RenalPhysiologyBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -41131,7 +41235,7 @@ function RenalPhysiologyBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#34d399 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDED8 Renal Physiology Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDED8 Renal Physiology Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -42515,7 +42619,7 @@ function VasculitisGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -42610,7 +42714,7 @@ function VasculitisGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f59e0b 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Vasculitis Guide"), React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Vasculitis Guide"), React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -44325,7 +44429,7 @@ function HaemMalignancies({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -44455,7 +44559,7 @@ function HaemMalignancies({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#fbbf24 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDE78 Haem Malignancies"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDE78 Haem Malignancies"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -44700,7 +44804,7 @@ function HaemostasisGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -49237,7 +49341,7 @@ function MidgutPathologies({ initialTab, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#a78bfa 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Midgut Pathologies"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Midgut Pathologies"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -50886,7 +50990,7 @@ function HindgutPathologies({ initialTab, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#38bdf8 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Hindgut Pathologies"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Hindgut Pathologies"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -51887,7 +51991,7 @@ function ECGBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "ECG Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "ECG Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -52049,7 +52153,7 @@ function AcidBaseBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f2c14e 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Acid-Base & ABG Interpretation"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Acid-Base & ABG Interpretation"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -52599,7 +52703,7 @@ function GIBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -52778,7 +52882,7 @@ function GIBasics({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#1b9aaa 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "\uD83E\uDEE7 GI Basics"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "\uD83E\uDEE7 GI Basics"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -52961,7 +53065,7 @@ function ForegutPathologies({ initialTab, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#38bdf8 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Foregut Pathologies"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Foregut Pathologies"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -53055,7 +53159,7 @@ function TBGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -53170,7 +53274,7 @@ function TBGuide({ initialTab, initialCard, onJump }) {
         } }, "Tuberculosis Guide"), React.createElement("div", { style: {
             fontSize: 10.5, color: TX3, textAlign: "center", marginBottom: 10,
             fontFamily: FF2, fontStyle: "normal",
-        } }, "A dedicated module for T.B since you're a Gulab Devian :)"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "A dedicated module for T.B since you're a Gulab Devian :)"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -53285,7 +53389,7 @@ function MicrobiologyGuide({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -53470,7 +53574,7 @@ function MicrobiologyGuide({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#38bdf8 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Microbiology Guide"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Microbiology Guide"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -53607,7 +53711,7 @@ function InfectiousDiseases({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -53886,7 +53990,7 @@ function InfectiousDiseases({ initialTab, initialCard, onJump }) {
             background: `linear-gradient(135deg,#fff 15%,${AC} 60%,#f0a830 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             backgroundClip: "text",
-        } }, "Fever & Infection"), React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+        } }, "Fever & Infection"), React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
         const isActive = tab === t.id;
         return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                 flexShrink: 0, padding: "5px 11px",
@@ -54117,7 +54221,7 @@ function PharmacologyModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -55304,7 +55408,7 @@ function PharmacologyPart2Module({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -56607,7 +56711,7 @@ function PharmacologyPart3Module({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -57862,7 +57966,7 @@ function PharmacologyPart4Module({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -59012,7 +59116,7 @@ function PharmacologyPart5Module({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -60000,7 +60104,7 @@ function PharmacologyPart6Module({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -61074,7 +61178,7 @@ function Surg1PreopModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -61402,7 +61506,7 @@ function Surg1PreopModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "PreOp Assessment"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -61518,7 +61622,7 @@ function Surg1PostopModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -61897,7 +62001,7 @@ function Surg1PostopModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Postoperative Care"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -62583,7 +62687,7 @@ function Surg2BreastModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -63064,7 +63168,7 @@ function Surg2BreastModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Breast Surgery"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -63215,7 +63319,7 @@ function Surg2HeadNeckModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -63456,7 +63560,7 @@ function Surg2HeadNeckModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Head & Neck Deep Dive"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -63586,7 +63690,7 @@ function SurgeryBasics({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -64075,7 +64179,7 @@ function SurgeryBasics({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\u2695\uFE0F Surgery Basics"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -64253,7 +64357,7 @@ function Surg2ThoracicModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -64482,7 +64586,7 @@ function Surg2ThoracicModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Thoracic Diseases"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -64609,7 +64713,7 @@ function Surg1ShockModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -64982,7 +65086,7 @@ function Surg1ShockModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83E\uDE78 Shock, Hemorrhage & Wound"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -65742,7 +65846,7 @@ function _GIK_Shell({ AC, kicker, icon, title, subtitle, tabs, tab, setTab, patt
                 CE("div", { style: { fontSize: 9, letterSpacing: "0.22em", color: _GIK_TX3, textTransform: "uppercase", marginBottom: 5, fontFamily: _GIK_FF } }, kicker),
                 CE("h1", { className: "gik-title", style: { "--c": AC + "77", margin: 0, fontSize: "clamp(19px,5vw,26px)", fontWeight: 800, letterSpacing: "0.04em", color: AC, fontFamily: _GIK_SERIF } }, icon + " " + title),
                 CE("div", { style: { fontSize: 10.5, color: _GIK_TX2, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 5, fontFamily: _GIK_FF } }, subtitle)),
-            CE("div", { style: { display: "flex", gap: 8, overflowX: "auto", padding: "8px 16px 12px", scrollbarWidth: "none", justifyContent: "safe center" } }, tabs.map(t => {
+            CE("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 8, overflowX: "auto", padding: "8px 16px 12px", scrollbarWidth: "none", justifyContent: "safe center" } }, tabs.map(t => {
                 const on = tab === t.id;
                 return CE("button", { key: t.id, className: "gik-pill" + (on ? " gik-tabin" : ""), onClick: () => { if (typeof resetScrollTop === "function") resetScrollTop(); setTab(t.id); },
                     style: { flexShrink: 0, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 20, cursor: "pointer", fontFamily: _GIK_FF,
@@ -68756,7 +68860,7 @@ function Surg1AnesthesiaModule({ initialTab, initialCard, onJump }) {
                 cardRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
             }
         }, [initialCard]);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: "linear-gradient(160deg, rgba(13,16,21,0.92) 0%, rgba(8,10,13,0.96) 100%)",
                 border: `1px solid ${open ? cc + "55" : hover ? cc + "30" : BOR}`,
                 borderRadius: 8, marginBottom: 14, overflow: "hidden", position: "relative",
@@ -69155,7 +69259,7 @@ function Surg1RadiologyModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -69496,7 +69600,7 @@ function Surg1RadiologyModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83E\uDE7B Principles of Radiology"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -69626,7 +69730,7 @@ function Surg1BurnsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -69870,7 +69974,7 @@ function Surg1BurnsModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83D\uDD25 Burn Injuries"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -69999,7 +70103,7 @@ function Surg1InfectionsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -70288,7 +70392,7 @@ function Surg1InfectionsModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83E\uDDA0 Surgical Infections"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -70625,7 +70729,7 @@ function Surg1VascularModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -70890,7 +70994,7 @@ function Surg1VascularModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83E\uDEC0 Vascular & Nerve Disorders"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -71022,7 +71126,7 @@ function Surg1PediatricModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -71360,7 +71464,7 @@ function Surg1PediatricModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83D\uDC76 Pediatric Surgery"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -71512,7 +71616,7 @@ function Surg1UrogenitalModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(19,21,27,0.9) 0%, rgba(11,12,17,0.95) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -71751,7 +71855,7 @@ function Surg1UrogenitalModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "\uD83D\uDEB9 Urogenital Conditions"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { if (typeof resetScrollTop === "function")
                         resetScrollTop(); setTab(t.id); }, style: {
@@ -72482,7 +72586,7 @@ function Surg2HerniaModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -72839,7 +72943,7 @@ function Surg2HerniaModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Hernia"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -76150,7 +76254,7 @@ function Surg2PancreasModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -76409,7 +76513,7 @@ function Surg2PancreasModule({ initialTab, initialCard, onJump }) {
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Pancreas"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -76526,7 +76630,7 @@ function Surg2GallbladderModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -76746,7 +76850,7 @@ React.createElement(Row, { c: "#4ade80", label: "Why benign lesions still need p
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     backgroundClip: "text",
                 } }, "Gallbladder & Bile Ducts"),
-            React.createElement("div", { style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+            React.createElement("div", { "data-mz-tabs": "1", style: { display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                 const isActive = tab === t.id;
                 return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                         flexShrink: 0, padding: "5px 11px",
@@ -76880,7 +76984,7 @@ function Surg2SpleenModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -77175,7 +77279,7 @@ function Surg2SpleenModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDFE3 Spleen"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -77308,7 +77412,7 @@ function Surg2OrthoModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -78028,7 +78132,7 @@ function Surg2OrthoModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "Orthopedic & Trauma"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -78138,7 +78242,7 @@ function Surg1LaparoscopicModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = color || AC;
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -78492,7 +78596,7 @@ function Surg1LaparoscopicModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "Laparoscopic & Robotic Surgery"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -78572,7 +78676,7 @@ function Surg1PlasticModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = color || AC;
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -78756,7 +78860,7 @@ function Surg1PlasticModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "Reconstructive & Plastic Surgery"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -78836,7 +78940,7 @@ function Surg1EthicsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = color || AC;
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
                 backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
                 transform: "translateZ(0)", WebkitTransform: "translateZ(0)",
@@ -79014,7 +79118,7 @@ function Surg1EthicsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "Surgical Ethics & Patient Safety"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -86834,7 +86938,7 @@ function GynBasicsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -87155,7 +87259,7 @@ function GynBasicsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF38 Female Reproductive Basics"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -87264,7 +87368,7 @@ function ObsPhysiologyModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -87594,7 +87698,7 @@ function ObsPhysiologyModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDD30 Maternal & Fetal Physiology"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -87937,7 +88041,7 @@ function ObsLabourModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -88658,7 +88762,7 @@ function ObsLabourModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDC76 Labour"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -88768,7 +88872,7 @@ function ObsEmergenciesModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -89165,7 +89269,7 @@ function ObsEmergenciesModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDEA8 Obstetric Emergencies"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -89263,7 +89367,7 @@ function GynMenopauseModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -89501,7 +89605,7 @@ function GynMenopauseModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF42 Perimenopause & Menopause"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -89600,7 +89704,7 @@ function GynInfectionsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -89934,7 +90038,7 @@ function GynInfectionsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDA0 Genital Tract Infections"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -90032,7 +90136,7 @@ function GynContraceptionModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -90324,7 +90428,7 @@ function GynContraceptionModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDC8A Contraception"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -90422,7 +90526,7 @@ function GynSubfertilityModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -90703,7 +90807,7 @@ function GynSubfertilityModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDD5A Subfertility"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -90803,7 +90907,7 @@ function GynEarlypregModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -91128,7 +91232,7 @@ function GynEarlypregModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\u26A0\uFE0F Problems in Early Pregnancy"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -91257,7 +91361,7 @@ function GynOncModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -91952,7 +92056,7 @@ function GynOncModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF97\uFE0F Ovarian, Uterine & Cervical Disease"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -92051,7 +92155,7 @@ function GynVulvovaginalModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -92258,7 +92362,7 @@ function GynVulvovaginalModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF3A Vulvovaginal Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -92434,7 +92538,7 @@ function GynUrogynaeModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -92837,7 +92941,7 @@ function GynUrogynaeModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDCA7 Urogynaecology"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -92937,7 +93041,7 @@ function GynSurgeryModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -93273,7 +93377,7 @@ function GynSurgeryModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDD2A Gynaecological Surgeries"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -93371,7 +93475,7 @@ function GynEthicsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -93624,7 +93728,7 @@ function GynEthicsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\u2696\uFE0F Ethics & Gender-Based Violence"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -93986,7 +94090,7 @@ function GynMenstrualModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -94585,7 +94689,7 @@ function GynMenstrualModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDE78 Menstrual Cycle & Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -95051,7 +95155,7 @@ function ObsAntenatalcareModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -95400,7 +95504,7 @@ function ObsAntenatalcareModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDDD3\uFE0F Early Pregnancy & Antenatal Care"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -95514,7 +95618,7 @@ function ObsAntenatalproblemsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -96053,7 +96157,7 @@ function ObsAntenatalproblemsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDE7A Antenatal Obstetric Problems"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -96163,7 +96267,7 @@ function ObsPuerperiumModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -96513,7 +96617,7 @@ function ObsPuerperiumModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF7C Puerperium"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -96623,7 +96727,7 @@ function ObsOperativeModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -96980,7 +97084,7 @@ function ObsOperativeModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\u2702\uFE0F Operative Interventions"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -97283,7 +97387,7 @@ function ObsEmbryologyModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -101312,7 +101416,7 @@ function Peds1FundamentalsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -101772,7 +101876,7 @@ function Peds1FundamentalsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDD2 Fundamentals of Paediatrics"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -101879,7 +101983,7 @@ function Peds2NeonatModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -102244,7 +102348,7 @@ function Peds2NeonatModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDC23 Neonatology"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -102352,7 +102456,7 @@ function Peds2HaemModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -102743,7 +102847,7 @@ function Peds2HaemModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDE78 Haematologic Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -102850,7 +102954,7 @@ function Peds1RespModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -103261,7 +103365,7 @@ function Peds1RespModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDEC1 Respiratory Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -103358,7 +103462,7 @@ function Peds1GiModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -103775,7 +103879,7 @@ function Peds1GiModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF7D\uFE0F GI & Liver Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -103872,7 +103976,7 @@ function Peds2RenalModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -104208,7 +104312,7 @@ function Peds2RenalModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDED8 Renal Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -104305,7 +104409,7 @@ function Peds1NutritionModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -104659,7 +104763,7 @@ function Peds1NutritionModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83C\uDF4E Nutrition & Nutritional Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -104757,7 +104861,7 @@ function Peds1CvsModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -105155,7 +105259,7 @@ function Peds1CvsModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\u2764\uFE0F Cardiovascular Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -105252,7 +105356,7 @@ function Peds1EndoModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -105575,7 +105679,7 @@ function Peds1EndoModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\u26A1 Endocrine Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -105674,7 +105778,7 @@ function Peds1NeuroModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -106188,7 +106292,7 @@ function Peds1NeuroModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDE0 Neurologic Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -106285,7 +106389,7 @@ function Peds1NeuromuscularModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -106532,7 +106636,7 @@ function Peds1NeuromuscularModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDCAA Neuromuscular Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -106631,7 +106735,7 @@ function Peds2IdModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -107054,7 +107158,7 @@ function Peds2IdModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDA0 Infectious Diseases"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -107151,7 +107255,7 @@ function Peds2MetabolicModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -107349,7 +107453,7 @@ function Peds2MetabolicModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDEA Metabolic Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -107446,7 +107550,7 @@ function Peds2BonejointModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -107709,7 +107813,7 @@ function Peds2BonejointModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDB4 Bone & Joint Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -107806,7 +107910,7 @@ function Peds2GeneticModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -108031,7 +108135,7 @@ function Peds2GeneticModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83E\uDDEC Genetic Disorders"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
@@ -108128,7 +108232,7 @@ function Peds2AbuseModule({ initialTab, initialCard, onJump }) {
             }
         }, [initialCard]);
         const cc = compare ? "#fbbf24" : (color || AC);
-        return (React.createElement("div", { ref: cardRef, onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
+        return (React.createElement("div", { ref: cardRef, "data-mz-card": id, "data-mz-title": typeof title === "string" ? title : "", onMouseEnter: () => setHover(true), onMouseLeave: () => setHover(false), style: {
                 background: compare
                     ? `linear-gradient(160deg, rgba(45,35,10,0.55) 0%, rgba(12,13,18,0.94) 100%)`
                     : `linear-gradient(160deg, rgba(17,19,24,0.86) 0%, rgba(12,13,18,0.93) 100%)`,
@@ -108340,7 +108444,7 @@ function Peds2AbuseModule({ initialTab, initialCard, onJump }) {
                         WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                         backgroundClip: "text",
                     } }, "\uD83D\uDEE1\uFE0F Child Abuse & Paediatric Trauma"),
-                React.createElement("div", { style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
+                React.createElement("div", { "data-mz-tabs": "1", style: { width: "100%", display: "flex", gap: 5, overflowX: "auto", overflowY: "visible", padding: "7px 3px 8px 3px", scrollbarWidth: "none" } }, tabs.map(t => {
                     const isActive = tab === t.id;
                     return (React.createElement("button", { key: t.id, onClick: () => { resetScrollTop(); setTab(t.id); }, style: {
                             flexShrink: 0, padding: "5px 11px",
