@@ -2346,6 +2346,20 @@ function mzEBold(E0) {
     const fix = (k) => (typeof k === "string" ? (k.indexOf("**") >= 0 ? mzBold(k) : k) : Array.isArray(k) ? k.map(fix) : k);
     return function (type, props) { const kids = Array.prototype.slice.call(arguments, 2).map(fix); return E0.apply(null, [type, props].concat(kids)); };
 }
+/* ===== Key figures registry: auto-shown at the top of any card whose title matches (exact or prefix) ===== */
+const MZ_KEYFIG = {"Hypertension": [["≥140/90", "mmHg clinic threshold (ESC/NICE); ACC/AHA uses ≥130/80"], ["~90–95%", "are primary (essential) hypertension"], ["Most common", "modifiable risk factor for stroke and CVD death"]], "Acute Rheumatic Fever": [["2–4 weeks", "delay after group A strep pharyngitis"], ["5–15 yr", "peak age group"], ["50–70%", "develop carditis"], ["Mitral", "most commonly damaged valve, then aortic"]], "Chronic Rheumatic Heart Disease": [["Mitral", "valve most often scarred (mitral stenosis)"], ["10–20 yr", "typical latency from ARF to symptomatic stenosis"], ["4–6 cm²", "normal mitral valve area; ≤1.5 cm² is severe"]], "Mitral Stenosis": [["4–6 cm²", "normal mitral valve area"], ["≤1.5 cm²", "severe stenosis"], ["Rheumatic", "by far the commonest cause worldwide"], ["AF", "common complication: anticoagulate"]], "Aortic Stenosis": [["3–4 cm²", "normal aortic valve area"], ["<1.0 cm²", "severe; Vmax ≥4 m/s, mean gradient ≥40 mmHg"], ["~5 / 3 / 2 yr", "average survival after angina / syncope / heart failure"]], "Atrial Fibrillation": [["2–4%", "of adults; rises steeply with age"], ["~5×", "higher stroke risk"], ["≥2 (men) / ≥3 (women)", "CHA₂DS₂-VASc where anticoagulation is advised"]], "Acute Coronary Syndrome": [["≤10 min", "target for first ECG after arrival"], ["≤120 min", "STEMI: diagnosis-to-PCI target, else fibrinolysis"], ["≤12 h", "symptom window for primary reperfusion"]], "Infective Endocarditis": [["S. aureus", "commonest cause overall (viridans strep in native valve, subacute)"], ["2 major or 1 + 3 minor", "modified Duke: definite IE"], ["4–6 weeks", "typical IV antibiotic course"]], "Aortic Dissection": [["Stanford A", "ascending aorta: emergency surgery"], ["Stanford B", "descending only: medical management unless complicated"], ["Sudden tearing pain", "with BP difference >20 mmHg between arms"]], "Ischaemic Stroke": [["~85%", "of all strokes are ischaemic"], ["≤4.5 h", "IV thrombolysis window"], ["≤24 h", "thrombectomy possible in selected patients"], ["~2 million", "neurons lost every minute untreated"]], "Status Epilepticus": [["≥5 min", "continuous seizure defines status epilepticus"], ["Lorazepam 4 mg IV", "adult first line (0.1 mg/kg), repeat once at 10 min"], ["Check glucose", "in every seizure"]], "Bacterial Meningitis": [["Dexamethasone", "with or before the first antibiotic dose"], ["CSF glucose", "<0.4 of serum glucose; neutrophils; high protein"], ["S. pneumoniae", "commonest adult cause"]], "Myasthenia Gravis": [["~85%", "of generalised MG are anti-AChR positive"], ["10–15%", "have a thymoma"], ["Fatiguable", "weakness; ptosis and diplopia often first"]], "Guillain-Barré Syndrome": [["1–2 / 100,000", "per year"], ["~2/3", "follow an infection (Campylobacter jejuni commonest)"], ["Nadir ≤4 weeks", "ascending weakness, areflexia"]], "Multiple Sclerosis": [["20–40 yr", "typical onset"], ["~3 : 1", "female to male"], ["Space + time", "dissemination is the McDonald principle"]], "Parkinson's Disease": [["≥60%", "of dopaminergic neurons lost before motor signs"], ["~1%", "of people over 60"], ["Bradykinesia +", "rest tremor or rigidity: the diagnostic requirement"]], "Alzheimer's Disease": [["60–70%", "of all dementia"], ["Tau + amyloid", "tangles and plaques"], ["Hippocampus", "first region affected: recent memory first"]], "Plaque Psoriasis": [["2–3%", "population prevalence"], ["PASI >10", "with DLQI >10 marks severe disease → systemic therapy"], ["Koebner", "new plaques at sites of trauma"]], "Melanoma": [["Breslow thickness", "single strongest prognostic factor"], ["ABCDE", "Asymmetry, Border, Colour, Diameter >6 mm, Evolving"], ["1 mm", "excision margin for ≤1 mm; 1–2 cm for thicker tumours"]], "Asthma": [["PEF 33–50%", "of best = acute severe; <33% = life-threatening"], ["Reversible", "FEV₁ rise ≥12% and ≥200 mL after bronchodilator"]], "Acute Severe Asthma": [["PEF <33%", "life-threatening; silent chest, cyanosis, exhaustion"], ["Salbutamol + ipratropium", "back-to-back nebs, prednisolone 40–50 mg, magnesium sulfate IV"]], "Community-Acquired Pneumonia": [["CURB-65 ≥2", "consider admission; ≥3 = severe"], ["S. pneumoniae", "commonest cause"], ["5 days", "usual antibiotic course if uncomplicated"]], "Pulmonary Embolism": [["Wells ≤4", "PE unlikely → D-dimer first"], ["≥3 months", "minimum anticoagulation"], ["CTPA", "imaging of choice if stable"]], "Pneumothorax": [["≥2 cm", "rim at hilum (BTS): 'large' pneumothorax"], ["Tension", "clinical diagnosis: decompress before imaging"]], "Obstructive Sleep Apnoea": [["AHI 5 / 15 / 30", "events per hour: mild / moderate / severe"], ["CPAP", "first-line for moderate–severe symptomatic OSA"]], "Small Cell Lung Cancer": [["~15%", "of lung cancers"], ["Paraneoplastic", "SIADH, ectopic ACTH, LEMS"]], "Non-Small Cell Lung Cancer": [["~85%", "of lung cancers"], ["Adenocarcinoma", "commonest type, including in never-smokers"]], "TB Treatment": [["2HRZE + 4HR", "standard drug-sensitive regimen"], ["6 months", "total duration"], ["Pyridoxine", "given with isoniazid"]], "HIV / AIDS": [["CD4 <200", "AIDS-defining; PCP prophylaxis threshold"], ["VL <200", "copies/mL = untransmittable (U=U)"], ["~39 million", "people living with HIV worldwide"]], "Malaria": [["~600,000", "deaths a year, mostly African children"], ["P. falciparum", "most lethal"], ["P. vivax / ovale", "hypnozoites need primaquine or tafenoquine"]], "Dengue Fever": [["Days 3–7", "critical phase: plasma leak as fever settles"], ["Aedes aegypti", "vector, bites by day"], ["Platelets ↓ + Hct ↑", "warning signs of leakage"]], "Enteric (Typhoid) Fever": [["Salmonella Typhi", "human-only reservoir"], ["Week 2 / 3", "rose spots / intestinal perforation risk"], ["Step-ladder fever", "with relative bradycardia"]], "Cholera": [["Up to 1 L/h", "stool loss in severe cases"], ["Rice-water", "stools; ORS saves most patients"], ["Vibrio cholerae", "toxin-driven secretory diarrhoea"]], "Sepsis & Septic Shock": [["Hour-1 bundle", "lactate, cultures, antibiotics, fluids, vasopressors"], ["30 mL/kg", "crystalloid for hypotension or lactate ≥4"], ["MAP ≥65", "vasopressor target (noradrenaline first)"]], "Rabies": [["~100%", "fatal once symptoms appear"], ["15 min", "wound washing with soap and water"], ["RIG + vaccine", "post-exposure: start immediately"]], "Tetanus": [["3–21 days", "incubation"], ["Trismus", "usually the first sign"], ["Toxin", "tetanospasmin blocks inhibitory glycine/GABA release"]], "Gastroesophageal Reflux Disease": [["~20%", "of Western adults have weekly symptoms"], ["Alarm signs", "dysphagia, weight loss, anaemia, vomiting, age >55"]], "Barrett's Esophagus": [["~0.3–0.5%", "per year progress to adenocarcinoma"], ["Intestinal metaplasia", "replaces squamous epithelium"]], "Acute Pancreatitis": [["Gallstones + alcohol", "~80% of cases"], ["2 of 3", "pain, lipase >3× upper limit, imaging"]], "Colorectal Cancer": [["3rd", "commonest cancer worldwide"], ["5–10 yr", "adenoma-to-carcinoma sequence"]], "Ulcerative Colitis": [["Rectum", "always involved; continuous proximal spread"], ["Truelove & Witts", "severe: >6 bloody stools/day plus systemic upset"]], "Acute Lymphoblastic Leukaemia": [["~80%", "of childhood leukaemia"], ["2–5 yr", "peak age"], ["t(12;21)", "favourable cytogenetics"]], "Acute Myeloid Leukaemia": [["≥20%", "marrow blasts (AML-defining)"], ["Auer rods", "myeloid lineage"], ["t(15;17)", "APL: ATRA, DIC risk"]], "Chronic Myeloid Leukaemia": [["t(9;22)", "BCR-ABL1 (Philadelphia chromosome)"], ["Imatinib", "TKI first line"]], "Chronic Lymphocytic Leukaemia": [["≥5 × 10⁹/L", "clonal B lymphocytes"], ["Smudge cells", "on blood film"]], "Multiple Myeloma": [["CRAB", "Calcium, Renal, Anaemia, Bone lesions"], ["≥10%", "clonal marrow plasma cells"]], "Polycythaemia Vera": [["~95%", "carry JAK2 V617F"], ["Venesection", "target haematocrit <45%"]], "Tumour Lysis Syndrome": [["K⁺↑ PO₄³⁻↑ Ca²⁺↓ urate↑", "the four abnormalities"], ["Rasburicase", "+ IV fluids; check G6PD first"]], "Neutropenic Sepsis": [["ANC <0.5", "× 10⁹/L with fever ≥38°C"], ["≤1 hour", "time to first antibiotic dose"]], "Hypercalcaemia of Malignancy": [["~80%", "due to PTHrP"], ["Fluids first", "then bisphosphonate"]], "Kawasaki Disease": [["≥5 days", "fever plus 4 of 5 criteria"], ["IVIG 2 g/kg", "within 10 days"], ["~25% → ~4%", "coronary aneurysms untreated vs treated"]], "Giant Cell Arteritis": [["Age ≥50", "by definition"], ["Prednisolone", "start at once; do not wait for biopsy"]], "Down Syndrome": [["~1 in 700", "live births"], ["~95%", "trisomy 21 by non-disjunction"], ["AVSD", "characteristic congenital heart lesion"]], "Turner Syndrome": [["45,X", "~1 in 2,500 female births"], ["Short stature", "+ streak ovaries, coarctation, webbed neck"]], "Duchenne Muscular Dystrophy": [["~1 in 3,500", "male births"], ["Dystrophin", "Xp21 gene; CK massively raised"], ["Gowers' sign", "proximal weakness"]], "Nephrotic Syndrome": [["~85–90%", "of childhood cases are minimal change"], ["Albumin <25 g/L", "with oedema, UPCR >200 mg/mmol"], ["Prednisolone", "first-line treatment"]], "Febrile Seizures": [["6 months–5 yr", "age window"], ["2–5%", "of children affected"], ["Simple", "<15 min, generalised, once in 24 h"]], "Bronchiolitis": [["RSV", "commonest cause"], ["<12 months", "affected age; peaks in winter"], ["Supportive", "oxygen, fluids; no routine bronchodilators"]], "Tetralogy of Fallot": [["4 features", "VSD, overriding aorta, RV outflow obstruction, RVH"], ["Commonest", "cyanotic congenital heart disease"]], "Ventricular Septal Defect": [["Commonest", "congenital heart defect (~20–30%)"], ["Many", "small VSDs close spontaneously"]], "Neonatal Jaundice": [["<24 h", "jaundice is always pathological"], ["Kernicterus", "bilirubin encephalopathy risk"]], "Pre-eclampsia & Eclampsia": [["≥140/90", "after 20 weeks with proteinuria or organ dysfunction"], ["MgSO₄ 4 g IV", "loading dose, then 1 g/h"], ["Aspirin 75–150 mg", "from 12 weeks in high-risk women"]], "Postpartum Haemorrhage": [["≥500 mL", "vaginal; ≥1000 mL at caesarean"], ["~70%", "due to uterine atony"], ["4 Ts", "Tone, Trauma, Tissue, Thrombin"]], "Gestational Diabetes": [["Fasting ≥5.6", "mmol/L on 75 g OGTT"], ["2 h ≥7.8", "mmol/L on 75 g OGTT"]], "Ectopic Pregnancy": [["~95%", "are tubal, mostly ampullary"], ["Empty uterus", "with β-hCG >1500 IU/L suggests ectopic"]], "Recurrent Miscarriage": [["≥3", "consecutive losses (RCOG definition)"], ["~15–20%", "of recognised pregnancies miscarry"]], "Endometriosis": [["~10%", "of women of reproductive age"], ["Laparoscopy", "diagnostic gold standard"]], "Polyendocrine Metabolic Ovarian Syndrome": [["2 of 3", "Rotterdam: oligo-anovulation, hyperandrogenism, polycystic ovaries"], ["~10%", "of women of reproductive age"]], "Emergency Contraception": [["Copper IUD", "most effective, up to 5 days"], ["Ulipristal 30 mg", "up to 120 h"], ["Levonorgestrel 1.5 mg", "up to 72 h"]], "Glasgow Coma Scale": [["3–15", "score range (E4 V5 M6)"], ["≤8", "secure the airway"]], "Tension Pneumothorax": [["Clinical diagnosis", "never wait for a chest X-ray"], ["Needle decompression", "5th ICS, anterior axillary line (ATLS)"]], "Cardiac Tamponade": [["Beck's triad", "hypotension, raised JVP, muffled heart sounds"], ["Pericardiocentesis", "or surgical drainage"]], "Haemorrhagic Shock": [["Class I / II / III / IV", "<15% / 15–30% / 30–40% / >40% blood loss"], ["Tachycardia", "first sign; hypotension is late"]], "Light's Criteria": [["Protein ratio >0.5", "pleural to serum"], ["LDH ratio >0.6", "or pleural LDH >⅔ of serum upper limit"]], "Revised Cardiac Risk Index": [["6 predictors", "each scores 1 point"], ["≥3 points", "~11% major cardiac complication risk"]], "Pleomorphic Adenoma": [["Commonest", "salivary gland tumour, mostly parotid"], ["Enucleation", "causes recurrence: use superficial parotidectomy"]], "COPD (Chronic Bronchitis": [["FEV₁/FVC <0.7", "post-bronchodilator: confirms airflow obstruction"], ["88–92%", "target SpO₂ when at risk of hypercapnia"], ["Smoking", "~80–90% of cases in high-income countries"]], "Croup: Assessment": [["Dexamethasone", "single dose 0.15 mg/kg"], ["Steeple sign", "on AP neck X-ray"], ["6 months–3 yr", "peak age"]]};
+const MZ_KEYFIG_EXACT = { "Colorectal Cancer": 1 };
+function mzKF(title, kids, color) {
+    try {
+        if (typeof title !== "string") return kids;
+        let f = MZ_KEYFIG[title];
+        if (!f) { for (const k in MZ_KEYFIG) { if (k.length >= 10 && !MZ_KEYFIG_EXACT[k] && title.indexOf(k) === 0 && !/[A-Za-z]/.test(title.charAt(k.length) || " ")) { f = MZ_KEYFIG[k]; break; } } }
+        if (!f) return kids;
+        const arr = Array.isArray(kids) ? kids : [kids];
+        if (arr.some(c => c && c.type === EpiStrip)) return kids;
+        return React.createElement(React.Fragment, null, React.createElement(EpiStrip, { color: color, facts: f }), kids);
+    } catch (e) { return kids; }
+}
 function EpiStrip({ color, facts, note }) {
     const c = (typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color)) ? color : "#38bdf8", E = React.createElement;
     return E("div", { style: { background: "linear-gradient(135deg, " + c + "12, " + c + "05)", border: "1px solid " + c + "30", borderLeft: "3px solid " + c, borderRadius: 12, padding: "10px 11px 9px", margin: "0 0 12px" } },
@@ -12771,7 +12785,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -13931,7 +13946,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             borderLeft: "3px solid #ffd100", borderRadius: 10, padding: "8px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ffd100", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, "\uD83D\uDCA1 PEARL"), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
     const Mnem = ({ title, items }) => (React.createElement("div", { style: { background: "rgba(255,77,109,0.06)", border: "1px solid rgba(255,77,109,0.2)",
             borderRadius: 10, padding: "10px 13px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: AC, letterSpacing: "0.1em", marginBottom: 6, fontFamily: FF2 } }, "\u26A1 ", title), items.map((item, i) => (React.createElement("div", { key: i, style: { fontSize: 12, color: TX2, lineHeight: 1.7, fontFamily: FF2, paddingLeft: 4 } }, React.createElement("span", { style: { color: AC, fontWeight: 700 } }, item.split(/[:\-–]/)[0]), item.includes(":") || item.includes("-") || item.includes("–") ? item.slice(item.search(/[:\-–]/)) : "")))));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -14387,13 +14403,7 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
                 "S. bovis (gallolyticus) IE mandates colonoscopy to find the underlying colorectal pathology",
                 "Negative blood cultures do not rule out IE — consider culture-negative organisms (Q fever, Bartonella, Brucella, Whipple's) before abandoning the diagnosis",
             ] })))),
-        rhd: (React.createElement("div", null, React.createElement(SectionIntro, { tag: "Rheumatic Heart Disease", title: "Acute Rheumatic Fever & RHD", accent: "#ff9f1c", desc: "A streptococcal sore throat that the immune system mistakes for cardiac tissue \u2014 molecular mimicry that, decades later, can leave a fish-mouth mitral valve. Secondary prophylaxis is the single most powerful preventive intervention in cardiology." }), React.createElement(DiseaseCard, { id: "card-0", title: "Acute Rheumatic Fever", icon: "\uD83D\uDCCB", color: "#ff9f1c", badges: [{ label: "Secondary prophylaxis = key intervention" }] }, React.createElement(Box, { color: "#ff9f1c", title: "Overview" }, "Acute rheumatic fever (ARF) is a non-suppurative inflammatory sequela of Group A Streptococcus (GAS) pharyngitis, typically affecting children aged 5\u201315 years, occurring 2\u20134 weeks after the preceding throat infection. Its major long-term significance is the risk of progression to chronic rheumatic heart disease (RHD) after repeated or severe episodes."), React.createElement(H, { color: "#ffb347" }, "Pathogenesis"), React.createElement(Box, { color: "#ffb347", title: "Molecular Mimicry, Not Direct Infection" }, "ARF is NOT caused by direct bacterial invasion of the heart or joints \u2014 it is an autoimmune cross-reaction. The GAS M protein (a major virulence factor on the bacterial cell wall) shares structural epitopes with human cardiac myosin, tropomyosin, and valvular endothelium \u2014 antibodies and T-cells generated to clear the streptococcal infection cross-react with these structurally similar self-antigens, attacking the heart valves (particularly the mitral valve, whose endothelium expresses a target epitope called laminin, exposed by the mechanical stress of valve closure), joints, skin, and basal ganglia. This is exactly why ARF has a 2\u20134 week LATENT period after the throat infection \u2014 because generating a sufficient adaptive antibody/T-cell response against the streptococcal antigen takes time, unlike the immediate suppurative complications (peritonsillar abscess) of direct bacterial spread. Repeated GAS infections cause repeated bouts of valvular inflammation, and each episode leaves a small amount of cumulative fibrotic scarring \u2014 this is why chronic RHD is a disease of REPEATED exposure and why secondary prophylaxis (preventing further GAS infections entirely) is so effective at halting disease progression."), React.createElement(H, { color: "#5eead4" }, "Clinical Features"), React.createElement(PresentsCollapse, { color: "#5eead4", label: "How This Patient Presents \u2014 Top-Down View" }, "A typical presentation: a child in a resource-limited setting (overcrowding and limited access to antibiotics for streptococcal pharyngitis are the dominant risk factors globally) develops fever and joint pain 2-4 weeks after a sore throat that may have been mild or already resolved by the time of presentation \u2014 the DELAY between the preceding infection and the current illness is itself a diagnostic clue, since it reflects the time needed for the cross-reactive immune response to develop. HOPI: the arthritis is classically migratory (moving from joint to joint over days, unlike the fixed, persistent arthritis of septic arthritis or the symmetric small-joint pattern of juvenile idiopathic arthritis) and dramatically and rapidly responsive to aspirin/NSAIDs \u2014 a response so characteristic that a poor response to aspirin should prompt reconsideration of the diagnosis. Related history: a preceding sore throat (may be forgotten or untreated, especially in areas with limited healthcare access) should be specifically asked about. On examination: signs vary by which major criteria are present \u2014 a new murmur (carditis), migratory large-joint arthritis, subcutaneous nodules, erythema marginatum (a evanescent, serpiginous rash with a pale centre), or choreiform movements (Sydenham's chorea, which can present WEEKS to months after the acute illness has otherwise resolved, since basal ganglia antibody cross-reactivity follows a different, slower time course)."), React.createElement(H, { color: "#2ddbac" }, "Investigations"), React.createElement(Mnem, { title: "CANES \u2014 Major Criteria", items: [
-                "C — Carditis (pancarditis — pericarditis, myocarditis, endocarditis — reflecting cross-reactive attack on all three cardiac layers simultaneously)",
-                "A — Arthritis (migratory, large joints — responds dramatically to aspirin, reflecting immune-complex-mediated synovitis)",
-                "N — Nodules (subcutaneous, Aschoff nodules — granulomatous foci of fibrinoid necrosis, the histological hallmark of rheumatic inflammation)",
-                "E — Erythema marginatum (immune-complex-mediated cutaneous vasculitis)",
-                "S — Sydenham's chorea (St Vitus dance — antibody cross-reactivity with basal ganglia neurons, on a delayed timescale relative to the other features)",
-            ] }), React.createElement(Box, { color: "#888", title: "Minor Criteria" }, "Fever \u226538.5\u00B0C, elevated ESR/CRP, prolonged PR interval (early, reversible carditis-related conduction slowing before valve damage sets in), arthralgia (cannot use if arthritis already major, to avoid double-counting the same joint inflammation), elevated WBC."), React.createElement(Box, { color: "#2ddbac", title: "Diagnosis" }, "2 major OR 1 major + 2 minor + evidence of preceding GAS infection (elevated ASO titre/anti-DNase B, positive throat culture) \u2014 the GAS evidence requirement exists specifically to distinguish true ARF from other causes of migratory arthritis/carditis that lack the specific streptococcal trigger."), React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 } }, React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Joint pattern"), " \u2014 migratory, large joints in ARF; a single, fixed, hot/swollen joint in septic arthritis; asymmetric, lower limb, persistent joints in reactive arthritis.")), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Response to aspirin"), " \u2014 dramatic and rapid in ARF; poor in septic arthritis, which needs antibiotics/drainage instead; partial in reactive arthritis.")), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Preceding infection"), " \u2014 GAS pharyngitis 2\u20134 weeks prior in ARF; often none in septic arthritis, from haematogenous seeding instead; a GI/GU infection 1\u20134 weeks prior in reactive arthritis.")), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Fever/systemic upset"), " \u2014 present in ARF; marked, with a toxic-looking patient, in septic arthritis; variable in reactive arthritis."))), [
+        rhd: (React.createElement("div", null, React.createElement(SectionIntro, { tag: "Rheumatic Heart Disease", title: "Acute Rheumatic Fever & RHD", accent: "#ff9f1c", desc: "A streptococcal sore throat that the immune system mistakes for cardiac tissue \u2014 molecular mimicry that, decades later, can leave a fish-mouth mitral valve. Secondary prophylaxis is the single most powerful preventive intervention in cardiology." }), React.createElement(DiseaseCard, { id: "card-0", title: "Acute Rheumatic Fever", icon: "\uD83D\uDCCB", color: "#ff9f1c", badges: [{ label: "Secondary prophylaxis = key intervention" }] }, React.createElement(Box, { color: "#ff9f1c", title: "Overview" }, "Acute rheumatic fever (ARF) is a non-suppurative inflammatory sequela of Group A Streptococcus (GAS) pharyngitis, typically affecting children aged 5\u201315 years, occurring 2\u20134 weeks after the preceding throat infection. Its major long-term significance is the risk of progression to chronic rheumatic heart disease (RHD) after repeated or severe episodes."), React.createElement(H, { color: "#ffb347" }, "Pathogenesis"), React.createElement(Box, { color: "#ffb347", title: "Molecular Mimicry, Not Direct Infection" }, "ARF is NOT caused by direct bacterial invasion of the heart or joints \u2014 it is an autoimmune cross-reaction. The GAS M protein (a major virulence factor on the bacterial cell wall) shares structural epitopes with human cardiac myosin, tropomyosin, and valvular endothelium \u2014 antibodies and T-cells generated to clear the streptococcal infection cross-react with these structurally similar self-antigens, attacking the heart valves (particularly the mitral valve, whose endothelium expresses a target epitope called laminin, exposed by the mechanical stress of valve closure), joints, skin, and basal ganglia. This is exactly why ARF has a 2\u20134 week LATENT period after the throat infection \u2014 because generating a sufficient adaptive antibody/T-cell response against the streptococcal antigen takes time, unlike the immediate suppurative complications (peritonsillar abscess) of direct bacterial spread. Repeated GAS infections cause repeated bouts of valvular inflammation, and each episode leaves a small amount of cumulative fibrotic scarring \u2014 this is why chronic RHD is a disease of REPEATED exposure and why secondary prophylaxis (preventing further GAS infections entirely) is so effective at halting disease progression."), React.createElement(H, { color: "#5eead4" }, "Clinical Features"), React.createElement(PresentsCollapse, { color: "#5eead4", label: "How This Patient Presents \u2014 Top-Down View" }, "A typical presentation: a child in a resource-limited setting (overcrowding and limited access to antibiotics for streptococcal pharyngitis are the dominant risk factors globally) develops fever and joint pain 2-4 weeks after a sore throat that may have been mild or already resolved by the time of presentation \u2014 the DELAY between the preceding infection and the current illness is itself a diagnostic clue, since it reflects the time needed for the cross-reactive immune response to develop. HOPI: the arthritis is classically migratory (moving from joint to joint over days, unlike the fixed, persistent arthritis of septic arthritis or the symmetric small-joint pattern of juvenile idiopathic arthritis) and dramatically and rapidly responsive to aspirin/NSAIDs \u2014 a response so characteristic that a poor response to aspirin should prompt reconsideration of the diagnosis. Related history: a preceding sore throat (may be forgotten or untreated, especially in areas with limited healthcare access) should be specifically asked about. On examination: signs vary by which major criteria are present \u2014 a new murmur (carditis), migratory large-joint arthritis, subcutaneous nodules, erythema marginatum (a evanescent, serpiginous rash with a pale centre), or choreiform movements (Sydenham's chorea, which can present WEEKS to months after the acute illness has otherwise resolved, since basal ganglia antibody cross-reactivity follows a different, slower time course)."), React.createElement(H, { color: "#2ddbac" }, "Investigations"), React.createElement(_RHD_Jones, null), React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 } }, React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Joint pattern"), " \u2014 migratory, large joints in ARF; a single, fixed, hot/swollen joint in septic arthritis; asymmetric, lower limb, persistent joints in reactive arthritis.")), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Response to aspirin"), " \u2014 dramatic and rapid in ARF; poor in septic arthritis, which needs antibiotics/drainage instead; partial in reactive arthritis.")), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Preceding infection"), " \u2014 GAS pharyngitis 2\u20134 weeks prior in ARF; often none in septic arthritis, from haematogenous seeding instead; a GI/GU infection 1\u20134 weeks prior in reactive arthritis.")), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: "#2ddbac", flexShrink: 0 } }, "\u2022"), React.createElement("span", null, React.createElement("b", { style: { color: TX } }, "Fever/systemic upset"), " \u2014 present in ARF; marked, with a toxic-looking patient, in septic arthritis; variable in reactive arthritis."))), [
             ["Throat swab + RADT", "Identify GAS directly — may be negative by the time ARF presents, since the causative infection has typically been cleared by the host immune response 2-4 weeks earlier, well before the autoimmune sequela becomes clinically apparent."],
             ["ASO titre", "Anti-streptolysin O — rises 2–4 weeks post-GAS as the antibody response matures. >200 Todd units significant. Peaks 3–6 weeks, providing serological evidence of the triggering infection even once the organism itself is no longer detectable."],
             ["Anti-DNase B", "More sensitive and persistent than ASO (remains elevated for longer, and detects skin as well as throat GAS infections which don't always raise ASO titres). Positive in >90% of ARF, making the combination of ASO + anti-DNase B the most sensitive serological confirmation available."],
@@ -14642,7 +14652,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -15256,7 +15267,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -16376,7 +16388,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -16849,7 +16862,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -17113,7 +17127,7 @@ function _LB_Gauge(P) {
         h("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 8 } },
             h("div", null, h("div", { style: { fontSize: 9.5, color: _LB_C.mut, fontWeight: 800, letterSpacing: 1.3 } }, P.label), h("div", { style: { display: "flex", alignItems: "baseline", gap: 6 } }, h("span", { style: { fontSize: 32, fontWeight: 800, color: col, fontFamily: "monospace", lineHeight: 1.1, textShadow: `0 0 18px ${col}77`, transition: "text-shadow .4s" } }, Number(tw[0]).toFixed(P.dec)), h("span", { style: { fontSize: 11.5, color: _LB_C.sub } }, P.unit)), P.conv && h("div", { style: { fontSize: 10, color: _LB_C.mut, fontFamily: "monospace" } }, "≈ " + (P.v * P.conv[0]).toFixed(2) + " " + P.conv[1])),
             h("div", { className: "lbT", style: { background: col + "22", border: `1px solid ${col}88`, color: col, borderRadius: 10, padding: "5px 11px", fontSize: 11, fontWeight: 800, boxShadow: `0 0 14px -4px ${col}` } }, stateTxt)),
-        h("div", { ref, onPointerDown: e => { e.currentTarget.setPointerCapture(e.pointerId); fromEvt(e); }, onPointerMove: e => { if (e.buttons) fromEvt(e); }, style: { cursor: "ew-resize", touchAction: "none", userSelect: "none", margin: "6px 0 2px" } }, h("div", { dangerouslySetInnerHTML: { __html: svg } })),
+        h("div", { ref, style: { position: "relative", margin: "6px 0 2px", userSelect: "none" } }, h("div", { dangerouslySetInnerHTML: { __html: svg.replace("touch-action:none;", "") } }), h("div", { onPointerDown: e => { e.currentTarget.setPointerCapture(e.pointerId); fromEvt(e); }, onPointerMove: e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) fromEvt(e); }, style: { position: "absolute", left: "1.5%", width: "97%", top: "38%", height: "38%", cursor: "ew-resize", touchAction: "none" } })),
         h("div", { style: { display: "flex", gap: 6, alignItems: "center", marginTop: 4 } },
             h("button", { onClick: () => set(P.v - P.step), style: _LB_btn }, "−"),
             h("div", { style: { flex: 1, display: "flex", gap: 5, overflowX: "auto", paddingBottom: 2 } }, (P.pre || []).map((q, i) => { const on = Math.abs(P.v - q[1]) < P.step * 0.6; return h("button", { key: i, onClick: () => P.onChange(q[1]), className: "lbT", style: { flexShrink: 0, background: on ? col + "30" : "#111827", border: `1px solid ${on ? col : "#263449"}`, color: on ? "#fff" : _LB_C.sub, borderRadius: 9, padding: "5px 10px", fontSize: 10.5, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" } }, q[0]); })),
@@ -17142,7 +17156,7 @@ function _LB_Fader(P) {
         h("div", { style: { fontSize: 9, color: _LB_C.mut, fontWeight: 800, letterSpacing: 1 } }, P.label),
         h("div", { style: { fontSize: 13.5, fontWeight: 800, color: col, fontFamily: "monospace", textShadow: `0 0 12px ${col}77` } }, Number(tw[0]).toFixed(P.dec)),
         h("div", { style: { fontSize: 8, color: _LB_C.sub, marginBottom: 2 } }, P.unit || "\u00A0"),
-        h("div", { ref, onPointerDown: e => { e.currentTarget.setPointerCapture(e.pointerId); fromEvt(e); }, onPointerMove: e => { if (e.buttons) fromEvt(e); }, style: { cursor: "ns-resize", touchAction: "none", userSelect: "none" } }, h("div", { dangerouslySetInnerHTML: { __html: svg } })));
+        h("div", { ref, style: { position: "relative", userSelect: "none" } }, h("div", { dangerouslySetInnerHTML: { __html: svg.replace("touch-action:none;", "") } }), h("div", { onPointerDown: e => { e.currentTarget.setPointerCapture(e.pointerId); fromEvt(e); }, onPointerMove: e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) fromEvt(e); }, style: { position: "absolute", left: "16%", width: "68%", top: 0, bottom: 0, cursor: "ns-resize", touchAction: "none" } })));
 }
 /* animated rail of signs: rows = [{icon, sign, why, lit, tag}] */
 function _LB_Rail({ rows, color, title, sub }) {
@@ -17978,7 +17992,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -18186,7 +18201,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -18383,7 +18399,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -18585,7 +18602,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -18765,7 +18783,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: FFU, lineHeight: 1.9,
             whiteSpace: "nowrap", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -19105,7 +19124,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -19303,7 +19323,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -19610,7 +19631,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: FFU, lineHeight: 1.9,
             whiteSpace: "nowrap", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -19865,7 +19887,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: FFU, lineHeight: 1.9,
             whiteSpace: "nowrap", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -26955,7 +26978,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
         return (React.createElement("div", { style: { position: "relative", margin: "26px 0 14px", paddingLeft: 2 } }, icon && React.createElement("div", { style: { position: "absolute", left: -4, top: -20, fontSize: 46, opacity: 0.09, lineHeight: 1, pointerEvents: "none" } }, icon), React.createElement("div", { style: { position: "relative", fontSize: 15.5, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Playfair Display',Georgia,serif", paddingLeft: 14 } }, children)));
     };
 const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: { display: "contents" } }, React.createElement(_mzRawH_SubHead, p));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -30544,7 +30568,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -30808,7 +30833,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         "Cystic Fibrosis": "Named in 1938 by pathologist Dorothy Andersen for the fibrotic, cyst-like scarring she found in the pancreas at autopsy — the name describes the pancreatic pathology she could see under the microscope, decades before the CFTR chloride channel defect was identified as the actual underlying cause.",
         "Obstructive Sleep Apnoea (OSA)": "\"Apnoea\" comes from Greek a- (without) + pnoia (breath) — literally \"without breathing.\" The condition was described piecemeal for centuries (Dickens' \"Fat Boy\" in The Pickwick Papers is a famous literary example, giving rise to the older term \"Pickwickian syndrome\") before polysomnography in the 1970s allowed it to be formally characterised as a distinct sleep disorder.",
     };
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === "card-0");
         const [hover, setHover] = useState(false);
         const cc = compare ? "#fbbf24" : (color || AC);
@@ -35904,7 +35930,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -39263,7 +39290,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -41233,7 +41261,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -42718,7 +42747,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -44529,7 +44559,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
         const rest = chk ? raw.trim().slice(1).trim() : val;
         return (React.createElement("div", { key: j, style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, marginTop: 4 } }, React.createElement("span", { style: { color: AC, fontWeight: 700, fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.05em" } }, headers[j + 1], "  "), chk && React.createElement("span", { style: { color: positive ? "#4ade80" : "#7a8496", fontWeight: 700 } }, positive ? "✓ " : "✗ "), rest));
     }))))));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -44907,7 +44938,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             borderRadius: 10, padding: "9px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: c || "#4cc9f0", letterSpacing: "0.08em", marginBottom: 3, fontFamily: FF2 } }, "\uD83D\uDCA1 CLINICAL PEARL"), React.createElement("div", { style: { fontSize: 12, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
     const Mnem = ({ title, items, c }) => (React.createElement("div", { style: { background: `rgba(167,139,250,0.06)`, border: "1px solid rgba(167,139,250,0.2)",
             borderRadius: 10, padding: "10px 13px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: c || "#a78bfa", letterSpacing: "0.1em", marginBottom: 6, fontFamily: FF2 } }, "\uD83E\uDDE0 ", title), items.map((item, i) => (React.createElement("div", { key: i, style: { fontSize: 12, color: TX2, lineHeight: 1.7, fontFamily: FF2, paddingLeft: 4 } }, item)))));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : id === "card-0");
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -45154,7 +45186,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === "card-0");
         const [hover, setHover] = useState(false);
         const cc = compare ? "#fbbf24" : (color || AC);
@@ -45411,7 +45444,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             background: `linear-gradient(135deg,#fff 20%,${accent || AC} 100%)`,
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
         } }, title), React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === "card-0");
         const [hover, setHover] = useState(false);
         const cc = compare ? "#fbbf24" : (color || AC);
@@ -49367,7 +49401,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === "card-0");
         const [hover, setHover] = useState(false);
         const cc = compare ? "#fbbf24" : (color || AC);
@@ -51013,7 +51048,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === "card-0");
         const [hover, setHover] = useState(false);
         const cc = compare ? "#fbbf24" : (color || AC);
@@ -52819,7 +52855,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -53093,7 +53130,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === "card-0");
         const [hover, setHover] = useState(false);
         const cc = compare ? "#fbbf24" : (color || AC);
@@ -53279,7 +53317,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -53511,7 +53550,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -53727,6 +53767,67 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             } }, React.createElement("span", { style: { fontSize: 12, filter: `drop-shadow(0 0 3px ${t.color}77)` } }, t.icon), React.createElement("span", { style: { letterSpacing: "0.01em" } }, t.label)));
     }))), React.createElement("div", { key: tab, className: "micro-tab-content", style: { padding: "20px 14px 80px", maxWidth: 500, margin: "0 auto", position: "relative", zIndex: 1 } }, content[tab])));
 }
+
+/* Revised Jones criteria (AHA 2015) as a tap-to-count tool: J♥NES majors, FACE minors, strep proof, live verdict */
+function _RHD_Jones() {
+    const E = React.createElement, FF = "system-ui,-apple-system,'Segoe UI',sans-serif";
+    const [hr, setHr] = useState(true), [rec, setRec] = useState(false), [gas, setGas] = useState(false), [on, setOn] = useState({});
+    const tg = k => setOn(o => Object.assign({}, o, { [k]: !o[k] }));
+    const MJ = [
+        { k: "j", L: "J", n: "Joints: arthritis", h: hr ? "Migratory large-joint arthritis (mono- or poly-), or even polyarthralgia" : "Migratory POLYarthritis of large joints (must be a true arthritis)", w: "Immune-complex synovitis. Settles dramatically with aspirin; a poor response should make you doubt ARF." },
+        { k: "c", L: "\u2665", n: "Carditis (clinical or echo)", h: "New murmur, heart failure, pericardial rub, OR subclinical valvulitis on echo (MR, or AR in a child)", w: "Pancarditis: pericardium, myocardium and endocardium. Only the valve scarring is permanent." },
+        { k: "n", L: "N", n: "Nodules (subcutaneous)", h: "Painless firm nodules over bones/tendons (elbows, knees, spine). Rare, and only with carditis", w: "Aschoff nodules: granulomatous foci of fibrinoid necrosis." },
+        { k: "e", L: "E", n: "Erythema marginatum", h: "Pink, ring-shaped, non-itchy rash on trunk/limbs; never the face. Comes and goes", w: "Immune-complex cutaneous vasculitis." },
+        { k: "s", L: "S", n: "Sydenham's chorea", h: "Purposeless jerky movements, emotional lability. Appears LATE (1 to 6 months)", w: "Antibodies cross-react with basal ganglia neurons. May be the only feature, with no strep proof needed." },
+    ];
+    const MN = [
+        { k: "f", L: "F", n: "Fever", h: hr ? "\u226538\u00B0C" : "\u226538.5\u00B0C", lock: null },
+        { k: "a", L: "A", n: "Arthralgia", h: hr ? "Monoarthralgia (joint pain without swelling)" : "Polyarthralgia (joint pain without swelling)", lock: "j", lockT: "Arthritis already counted as a major" },
+        { k: "r", L: "C", n: "CRP / ESR", h: hr ? "CRP \u22653 mg/dL or ESR \u226530 mm/h" : "CRP \u22653 mg/dL or ESR \u226560 mm/h", lock: null },
+        { k: "p", L: "E", n: "ECG: long PR interval", h: "Prolonged PR (1st-degree block)", lock: "c", lockT: "Carditis already counted as a major" },
+    ];
+    const M = MJ.filter(x => on[x.k]).length;
+    const m = MN.filter(x => on[x.k] && !(x.lock && on[x.lock])).length;
+    const cnt = rec ? (M >= 2 || (M >= 1 && m >= 1) || m >= 3) : (M >= 2 || (M >= 1 && m >= 2));
+    const solo = !gas && !!(on.s || on.c);
+    let tone, head, sub;
+    if (cnt && (gas || solo)) { tone = "#2ddbac"; head = "Criteria MET: diagnose ARF"; sub = solo && !gas ? "Chorea can stand without strep proof; indolent carditis too. Still document it." : "Counts satisfied and recent strep documented."; }
+    else if (cnt) { tone = "#fbbf24"; head = "Counts met, strep proof missing"; sub = "Get ASO + anti-DNase B (paired, 2 to 4 weeks apart), throat swab/RADT. Without proof the criteria are not met."; }
+    else { tone = "#64748b"; head = "Not met yet"; const need = rec ? "2 major, or 1 major + 1 minor, or 3 minor" : "2 major, or 1 major + 2 minor"; sub = "Counted " + M + " major, " + m + " minor. Need " + need + (gas ? "." : ", plus strep proof."); }
+    const pill = (lab, v, f, c) => E("button", { onClick: f, style: { flex: 1, padding: "7px 6px", borderRadius: 9, cursor: "pointer", fontFamily: FF, fontSize: 11, fontWeight: v ? 800 : 600, color: v ? "#fff" : "#7d8aa0", background: v ? c + "30" : "transparent", border: "1px solid " + (v ? c : "#263449") } }, lab);
+    const row = (x, c, major) => {
+        const locked = x.lock && on[x.lock], ticked = on[x.k] && !locked;
+        return E("button", { key: x.k, disabled: !!locked, onClick: () => tg(x.k), style: { display: "flex", gap: 11, alignItems: "flex-start", width: "100%", textAlign: "left", padding: "10px 11px", marginBottom: 6, borderRadius: 11, cursor: locked ? "not-allowed" : "pointer", opacity: locked ? 0.45 : 1, fontFamily: FF, background: ticked ? c + "1c" : "#0e1118", border: "1px solid " + (ticked ? c : c + "33"), boxShadow: ticked ? "0 0 14px -6px " + c : "none", transition: "all .2s" } },
+            E("span", { style: { flexShrink: 0, width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, fontFamily: "Georgia,serif", color: ticked ? "#0b0c10" : c, background: ticked ? c : c + "18", border: "1px solid " + c + "77" } }, x.L),
+            E("span", { style: { flex: 1, minWidth: 0 } },
+                E("span", { style: { display: "block", fontSize: 13.5, fontWeight: 800, color: ticked ? "#fff" : "#dbe3ef", lineHeight: 1.3 } }, x.n),
+                E("span", { style: { display: "block", fontSize: 11.8, color: "#8b97ab", lineHeight: 1.5, marginTop: 2 } }, locked ? x.lockT + " (no double-counting)" : x.h),
+                major && ticked && E("span", { style: { display: "block", fontSize: 11.3, color: c, lineHeight: 1.5, marginTop: 4, fontStyle: "italic" } }, x.w)),
+            E("span", { style: { flexShrink: 0, fontSize: 15, color: ticked ? c : "#334155", marginTop: 4 } }, ticked ? "\u25CF" : "\u25CB"));
+    };
+    const lab = (t, c, sub) => E("div", { style: { display: "flex", alignItems: "baseline", gap: 8, margin: "14px 2px 8px" } }, E("span", { style: { fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: c, fontFamily: FF } }, t), E("span", { style: { fontSize: 10.5, color: "#64748b", fontFamily: FF } }, sub));
+    return E("div", { style: { margin: "6px 0 14px", padding: "14px 12px", borderRadius: 14, background: "#0a0c12", border: "1px solid #1e2430" } },
+        E("div", { style: { fontSize: 11, fontWeight: 900, letterSpacing: "0.12em", color: "#ff4d6d", fontFamily: FF } }, "\u26A1 JONES CRITERIA (REVISED 2015) \u2014 TAP WHAT YOU FIND"),
+        E("div", { style: { margin: "10px 0 4px", padding: "11px 12px", borderRadius: 11, background: "linear-gradient(135deg,#ff4d6d14,#fbbf2410)", border: "1px solid #ff4d6d44", fontFamily: FF, textAlign: "center" } },
+            E("div", { style: { fontSize: 15, fontWeight: 900, color: "#fff", letterSpacing: "0.02em" } }, rec ? "2 MAJOR  or  1 MAJOR + 1 MINOR  or  3 MINOR" : "2 MAJOR  or  1 MAJOR + 2 MINOR"),
+            E("div", { style: { fontSize: 12, color: "#38bdf8", fontWeight: 700, marginTop: 3 } }, "+ proof of recent Group A strep (GAS)")),
+        E("div", { style: { display: "flex", gap: 6, margin: "10px 0 2px" } }, pill("Low-risk population", !hr, () => setHr(false), "#a78bfa"), pill("Moderate/high-risk (endemic)", hr, () => setHr(true), "#a78bfa")),
+        E("div", { style: { display: "flex", gap: 6, margin: "6px 0 0" } }, pill("First episode", !rec, () => setRec(false), "#38bdf8"), pill("Recurrence", rec, () => setRec(true), "#38bdf8")),
+        lab("MAJOR \u2014 J\u2665NES", "#ff4d6d", "5 criteria (Joints, \u2665 carditis, Nodules, Erythema, Sydenham)"),
+        MJ.map(x => row(x, "#ff4d6d", true)),
+        lab("MINOR \u2014 FACE", "#fbbf24", "4 criteria (Fever, Arthralgia, CRP/ESR, ECG)"),
+        MN.map(x => row(x, "#fbbf24", false)),
+        lab("EVIDENCE", "#38bdf8", "needed for the diagnosis"),
+        E("button", { onClick: () => setGas(g => !g), style: { display: "flex", gap: 11, alignItems: "flex-start", width: "100%", textAlign: "left", padding: "10px 11px", borderRadius: 11, cursor: "pointer", fontFamily: FF, background: gas ? "#38bdf81c" : "#0e1118", border: "1px solid " + (gas ? "#38bdf8" : "#38bdf833") } },
+            E("span", { style: { flexShrink: 0, width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: gas ? "#0b0c10" : "#38bdf8", background: gas ? "#38bdf8" : "#38bdf818", border: "1px solid #38bdf877" } }, "GAS"),
+            E("span", { style: { flex: 1 } }, E("span", { style: { display: "block", fontSize: 13.5, fontWeight: 800, color: gas ? "#fff" : "#dbe3ef" } }, "Recent strep infection proven"), E("span", { style: { display: "block", fontSize: 11.8, color: "#8b97ab", lineHeight: 1.5, marginTop: 2 } }, "Raised/rising ASO or anti-DNase B, positive throat culture or rapid antigen test, or recent scarlet fever"))),
+        E("div", { style: { marginTop: 14, padding: "12px 13px", borderRadius: 12, background: tone + "18", border: "1px solid " + tone, fontFamily: FF } },
+            E("div", { style: { fontSize: 14, fontWeight: 900, color: tone } }, head),
+            E("div", { style: { fontSize: 12, color: "#aab4c6", lineHeight: 1.55, marginTop: 3 } }, sub),
+            E("div", { style: { display: "flex", gap: 8, marginTop: 8, fontSize: 11, fontWeight: 800 } }, E("span", { style: { color: "#ff4d6d" } }, "Major " + M), E("span", { style: { color: "#fbbf24" } }, "Minor " + m), E("span", { style: { color: gas ? "#38bdf8" : "#64748b" } }, gas ? "GAS proven" : "GAS not proven"))),
+        E("div", { style: { marginTop: 10, fontSize: 11.5, color: "#8b97ab", lineHeight: 1.65, fontFamily: FF } },
+            E("b", { style: { color: "#fbbf24" } }, "Traps: "), "(1) The same finding never counts twice: arthritis as a major blocks arthralgia as a minor, carditis as a major blocks the long PR. (2) Majors are specific, minors are only supportive. (3) Fever, high ESR and long PR are minors, never majors. (4) Chorea and indolent carditis can present late, so strep proof may be gone: they can be diagnosed without it. (5) Lower thresholds in endemic populations exist because ARF is commoner and under-diagnosis costs more."));
+}
 const _InfectiousDiseases_etymology = {
     "Malaria": "From Italian mal'aria, \"bad air\" — coined in the 18th century because the disease was blamed on foul vapours rising from marshes, centuries before Alphonse Laveran identified the Plasmodium parasite in 1880 and Ronald Ross proved mosquito transmission in 1897.",
     "Cholera": "From Greek khole (bile), reflecting the ancient belief that the disease resulted from an excess of \"black bile\" or \"yellow bile\" humour — in use long before John Snow's 1854 Broad Street pump investigation established faecal-oral, waterborne transmission and effectively founded modern epidemiology.",
@@ -53843,7 +53944,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             color: AC, cursor: "pointer", fontFamily: "inherit", lineHeight: 1.4,
             whiteSpace: "normal", wordBreak: "break-word", boxShadow: `0 0 8px -3px ${AC}77`,
         } }, "\u2197 ", children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -54360,7 +54462,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -55549,7 +55652,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -56854,7 +56958,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -58111,7 +58216,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -59263,7 +59369,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -60253,7 +60360,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -61328,7 +61436,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -61773,7 +61882,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -62549,7 +62659,7 @@ function _BR_Toggle({ label, c, v, on, opts }) {
     const E = React.createElement, n = opts.length, idx = opts.findIndex(o => o[0] === v);
     return E("div", { style: { display: "grid", gridTemplateColumns: "74px 1fr", alignItems: "center", gap: 10, marginBottom: 9 } },
         E("div", { style: { fontSize: 12, fontWeight: 700, color: "#8b97ab", fontFamily: "system-ui" } }, label),
-        E("div", { role: "radiogroup", style: { position: "relative", display: "grid", gridTemplateColumns: "repeat(" + n + ",1fr)", padding: 3, borderRadius: 12, background: "#0a0c11", border: "1px solid #1d2230" } },
+        E("div", { role: "radiogroup", style: { position: "relative", display: "grid", gridTemplateColumns: "repeat(" + n + ",minmax(0,1fr))", padding: 3, borderRadius: 12, background: "#0a0c11", border: "1px solid #1d2230" } },
             idx >= 0 && E("div", { style: { position: "absolute", top: 3, bottom: 3, left: "calc(3px + " + idx + " * (100% - 6px) / " + n + ")", width: "calc((100% - 6px) / " + n + ")", borderRadius: 9, background: c + "26", border: "1.5px solid " + c, boxShadow: "0 0 12px -3px " + c + "99", transition: "left .32s cubic-bezier(.4,0,.2,1)", pointerEvents: "none" } }),
             opts.map(o => E("button", { key: o[0], role: "radio", "aria-checked": o[0] === v, className: "ob-btn", onClick: () => on(o[0]), style: { position: "relative", padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", fontSize: 12.5, fontWeight: o[0] === v ? 800 : 600, color: o[0] === v ? "#f1f5f9" : "#7d8aa0", fontFamily: "'Spectral',Georgia,serif", transition: "color .25s" } }, o[1]))));
 }
@@ -62839,7 +62949,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -63473,7 +63584,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -63846,7 +63958,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -64515,7 +64628,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -64873,7 +64987,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -65770,7 +65885,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             CE("div", { style: { height: 2, width: 64, borderRadius: 2, background: `linear-gradient(90deg, ${c}, transparent)`, margin: "0 0 10px", transformOrigin: "left", animation: "gikGrow .7s ease both" } }),
             CE("p", { style: { fontSize: 13, color: TX2, lineHeight: 1.65, margin: 0, fontFamily: FF } }, desc));
     };
-    const DiseaseCard = ({ id, ids, title, icon, color, badges, badge, badgeColor, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, ids, title, icon, color, badges, badge, badgeColor, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const hit = (x) => id === x || (ids && ids.indexOf(x) >= 0);
         const ic0 = refs.current.initialCard;
         const [open, setOpen] = useState(!!defaultOpen || hit(ic0 || (noDefault ? "" : "card-0")));
@@ -69423,7 +69539,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -69896,7 +70013,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -70271,7 +70389,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -70899,7 +71018,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -71306,7 +71426,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -71798,7 +71919,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -72796,7 +72918,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -76465,7 +76588,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -76843,7 +76967,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
             } }, title),
         React.createElement("div", { style: { fontSize: 12.5, color: "#9aa3b5", lineHeight: 1.6, position: "relative", textAlign: "center" } }, desc)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -77199,7 +77324,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -77647,7 +77773,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -78478,7 +78605,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -78913,7 +79041,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             borderLeft: "3px solid #ffd100", borderRadius: 10, padding: "8px 12px", marginBottom: 8 } },
         React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ffd100", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, "\uD83D\uDCA1 PEARL"),
         React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -79178,7 +79307,8 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             borderLeft: "3px solid #ffd100", borderRadius: 10, padding: "8px 12px", marginBottom: 8 } },
         React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ffd100", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, "\uD83D\uDCA1 PEARL"),
         React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, defaultOpen, noDefault }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, defaultOpen, noDefault }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(!!defaultOpen || id === (initialCard || (noDefault ? "" : "card-0")));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -87178,7 +87308,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -87610,7 +87741,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -88285,7 +88417,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -89118,7 +89251,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -89615,7 +89749,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -89954,7 +90089,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -90388,7 +90524,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -90780,7 +90917,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -91163,7 +91301,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -91619,7 +91758,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -92415,7 +92555,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -92800,7 +92941,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -93305,7 +93447,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -93741,7 +93884,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -94358,7 +94502,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -95004,7 +95149,7 @@ function _ANT_Num(p) {
 }
 function _ANT_Seg(p) {
     const E = React.createElement, n = p.opts.length, idx = p.opts.findIndex(o => o[0] === p.v);
-    if (n <= 3) return E("div", { role: "radiogroup", style: { position: "relative", display: "grid", gridTemplateColumns: "repeat(" + n + ",1fr)", padding: 3, borderRadius: 12, background: "#0a0c11", border: "1px solid #1d2230" } },
+    if (n <= 3) return E("div", { role: "radiogroup", style: { position: "relative", display: "grid", gridTemplateColumns: "repeat(" + n + ",minmax(0,1fr))", padding: 3, borderRadius: 12, background: "#0a0c11", border: "1px solid #1d2230" } },
         idx >= 0 && E("div", { style: { position: "absolute", top: 3, bottom: 3, left: "calc(3px + " + idx + " * (100% - 6px) / " + n + ")", width: "calc((100% - 6px) / " + n + ")", borderRadius: 9, background: p.c + "26", border: "1.5px solid " + p.c, boxShadow: "0 0 12px -3px " + p.c + "99", transition: "left .32s cubic-bezier(.4,0,.2,1)", pointerEvents: "none" } }),
         p.opts.map((o) => E("button", { key: o[0], role: "radio", "aria-checked": p.v === o[0], onClick: () => p.on(o[0]), style: { position: "relative", padding: "8px 5px", border: "none", background: "transparent", cursor: "pointer", fontSize: 12.5, fontWeight: p.v === o[0] ? 800 : 600, color: p.v === o[0] ? "#f1f5f9" : "#7d8aa0", fontFamily: _ANT.ff, transition: "color .25s" } }, o[1])));
     return E("div", { style: { display: "flex", gap: 6, flexWrap: "wrap" } }, p.opts.map((o) => E("button", { key: o[0], onClick: () => p.on(o[0]), style: { padding: "7px 12px", borderRadius: 999, border: "1px solid " + p.c + (p.v === o[0] ? "cc" : "44"), background: p.v === o[0] ? p.c + "26" : "transparent", color: p.v === o[0] ? "#f1f5f9" : _ANT.tx2, fontSize: 12, fontWeight: p.v === o[0] ? 800 : 600, cursor: "pointer", fontFamily: _ANT.ff, transition: "all .25s", boxShadow: p.v === o[0] ? "0 0 12px -4px " + p.c + "aa" : "none" } }, o[1])));
@@ -95425,7 +95570,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -95890,7 +96036,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -96541,7 +96688,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -97003,7 +97151,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -97665,7 +97814,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare, plain }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare, plain }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(initialCard ? id === initialCard : /-0$/.test(id));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -99213,13 +99363,17 @@ function _OB_Shell({ title, color, children }) {
         children);
 }
 function _OB_Pills({ items, value, onChange, color }) {
-    const E = React.createElement, n = items.length, idx = Math.max(0, items.findIndex(x => x.id === value)), cur = items[idx] || {}, cc = cur.color || color, T = "cubic-bezier(.3,.7,.2,1)";
-    const seg = n <= 4, gp = 4;
-    /* never hides a tab: <=4 tabs = equal-width segmented control with a sliding glow pill; more = wrapping colour chips */
-    return E("div", { className: "ob-pills", role: "tablist", style: { position: "relative", display: seg ? "grid" : "flex", gridTemplateColumns: seg ? "repeat(" + n + ",1fr)" : undefined, flexWrap: "wrap", gap: gp, padding: gp, marginBottom: 14, background: "#0d1119", border: "1px solid #1d2230", borderRadius: 14 } },
-        seg && E("div", { style: { position: "absolute", top: gp, bottom: gp, left: "calc(" + gp + "px + " + idx + " * ((100% - " + (2 * gp) + "px - " + (gp * (n - 1)) + "px) / " + n + " + " + gp + "px))", width: "calc((100% - " + (2 * gp) + "px - " + (gp * (n - 1)) + "px) / " + n + ")", borderRadius: 10, background: "linear-gradient(135deg," + cc + "55," + cc + "1c)", border: "1px solid " + cc + "99", boxShadow: "0 0 16px -3px " + cc + "aa, inset 0 1px 0 " + cc + "44", transition: "left .38s " + T + ",width .38s " + T + ",background .3s,border-color .3s,box-shadow .3s", pointerEvents: "none" } }),
+    const E = React.createElement, n = items.length, idx = Math.max(0, items.findIndex(x => x.id === value)), cur = items[idx] || {}, cc = cur.color || color;
+    const seg = n <= 4, gp = 4, box = React.useRef(null);
+    /* every tab is its own highlight (no separate sliding overlay, which drifted whenever labels had unequal widths); the strip scrolls sideways if it must, and keeps the active tab in view */
+    React.useEffect(() => {
+        const c = box.current; if (!c) return; if (c.scrollWidth <= c.clientWidth + 1) return;
+        const el = c.querySelector('[aria-selected="true"]'); if (!el) return;
+        c.scrollTo({ left: Math.max(0, el.offsetLeft - (c.clientWidth - el.offsetWidth) / 2), behavior: "smooth" });
+    }, [value]);
+    return E("div", { ref: box, className: "ob-pills", role: "tablist", style: { position: "relative", display: "flex", flexWrap: seg ? "nowrap" : "wrap", gap: gp, padding: gp, marginBottom: 14, background: "#0d1119", border: "1px solid #1d2230", borderRadius: 14, overflowX: seg ? "auto" : "visible", scrollbarWidth: "none" } },
         items.map(it => { const on = it.id === value, c = it.color || color;
-            return E("button", { key: it.id, role: "tab", "aria-selected": on, className: "ob-btn", onClick: () => onChange(it.id), style: { position: "relative", flex: seg ? undefined : "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 36, padding: "7px 12px", cursor: "pointer", border: "1px solid " + (!seg && on ? c + "aa" : "transparent"), borderRadius: 10, background: !seg && on ? "linear-gradient(135deg," + c + "40," + c + "14)" : "transparent", boxShadow: !seg && on ? "0 0 14px -4px " + c : "none", fontSize: 13, fontWeight: on ? 800 : 600, fontFamily: "'Spectral',Georgia,serif", whiteSpace: "nowrap", textAlign: "center", color: on ? "#fff" : "#8793a8", transition: "color .25s,background .3s,border-color .3s,box-shadow .3s,transform .2s", transform: on ? "scale(1.02)" : "scale(1)" } },
+            return E("button", { key: it.id, role: "tab", "aria-selected": on, className: "ob-btn", onClick: () => onChange(it.id), style: { position: "relative", flex: seg ? "1 0 auto" : "1 1 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 36, padding: "7px 12px", cursor: "pointer", border: "1px solid " + (on ? c + "aa" : "transparent"), borderRadius: 10, background: on ? "linear-gradient(135deg," + c + "40," + c + "14)" : "transparent", boxShadow: on ? "0 0 14px -4px " + c + ", inset 0 1px 0 " + c + "33" : "none", fontSize: 13, fontWeight: on ? 800 : 600, fontFamily: "'Spectral',Georgia,serif", whiteSpace: "nowrap", textAlign: "center", color: on ? "#fff" : "#8793a8", transition: "color .25s,background .3s,border-color .3s,box-shadow .3s" } },
                 E("span", { style: { width: 7, height: 7, borderRadius: 4, flexShrink: 0, background: c, opacity: on ? 1 : 0.5, boxShadow: on ? "0 0 8px " + c : "none", transition: "opacity .3s,box-shadow .3s" } }), it.label); }));
 }
 function _OB_interp(pts, x) {
@@ -101696,7 +101850,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -102265,7 +102420,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -102740,7 +102896,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -103240,7 +103397,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -103750,7 +103908,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -104266,7 +104425,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -104701,7 +104861,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -105155,7 +105316,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -105652,7 +105814,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -106076,7 +106239,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -106689,7 +106853,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -107037,7 +107202,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -107559,7 +107725,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -107856,7 +108023,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -108218,7 +108386,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
@@ -108542,7 +108711,8 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         } },
         "\u2197 ",
         children));
-    const DiseaseCard = ({ id, title, icon, color, badges, children, compare }) => {
+    const DiseaseCard = ({ id, title, icon, color, badges, children: _mzk, compare }) => {
+        const children = mzKF(title, _mzk, color);
         const [open, setOpen] = useState(id === (initialCard || "card-0"));
         const [hover, setHover] = useState(false);
         const cardRef = useRef(null);
