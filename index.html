@@ -532,14 +532,14 @@
   /* ===== Lock screen: gold seal, compact circular keys, gold-only success ===== */
   .mizan-lock--seal { background: radial-gradient(ellipse at 50% 22%, #1b160d 0%, #0c0a07 55%, #030303 100%); justify-content: center; gap: 0; }
   .mizan-lock--seal .mizan-lock__fx, .mizan-lock--seal .mizan-lock__glyph-wrap { display: none; }
-  .mizan-lock__pattern, .mizan-lock__pattern2 { position: absolute; inset: -160px; z-index: -1; pointer-events: none; -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 0%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.22) 100%); mask-image: radial-gradient(ellipse at 50% 42%, #000 0%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0.22) 100%); }
-  .mizan-lock__pattern { background-size: 80px 80px; animation: mzlDriftA 46s linear infinite; }
-  .mizan-lock__pattern2 { background-size: 160px 160px; animation: mzlDriftB 90s linear infinite; }
+  .mizan-lock__pattern, .mizan-lock__pattern2 { position: absolute; inset: -160px; z-index: -1; pointer-events: none; -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.16) 100%); mask-image: radial-gradient(ellipse at 50% 42%, #000 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.16) 100%); }
+  .mizan-lock__pattern { background-size: 80px 80px; animation: mzlDriftA 120s linear infinite; }
+  .mizan-lock__pattern2 { background-size: 160px 160px; animation: mzlDriftB 240s linear infinite; }
   @keyframes mzlDriftA { from { background-position: 0 0; } to { background-position: 80px 80px; } }
   @keyframes mzlDriftB { from { background-position: 160px 0; } to { background-position: 0 160px; } }
-  .mizan-lock__glow { z-index: -1; position: absolute; left: 50%; top: 30%; width: 120vmax; height: 120vmax; transform: translate(-50%,-50%); pointer-events: none; background: radial-gradient(circle, rgba(212,175,55,0.16) 0%, rgba(212,175,55,0.05) 22%, transparent 48%); animation: mzlBreathe 6s ease-in-out infinite; }
-  @keyframes mzlBreathe { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
-  .mizan-lock__sheen { z-index: -1; position: absolute; left: 50%; top: 30%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; pointer-events: none; background: conic-gradient(from 0deg, transparent 0deg, rgba(255,226,150,0.07) 14deg, transparent 42deg, transparent 180deg, rgba(255,226,150,0.05) 196deg, transparent 222deg); animation: mzsSpin 80s linear infinite; -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 55%); mask-image: radial-gradient(circle, #000 0%, transparent 55%); }
+  .mizan-lock__glow { z-index: -1; position: absolute; left: 50%; top: 30%; width: 120vmax; height: 120vmax; transform: translate(-50%,-50%); pointer-events: none; background: radial-gradient(circle, rgba(212,175,55,0.06) 0%, rgba(212,175,55,0.02) 24%, transparent 50%); animation: mzlBreathe 9s ease-in-out infinite; }
+  @keyframes mzlBreathe { 0%,100% { opacity: 0.6; } 50% { opacity: 0.9; } }
+  .mizan-lock__sheen { z-index: -1; position: absolute; left: 50%; top: 30%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; pointer-events: none; background: conic-gradient(from 0deg, transparent 0deg, rgba(255,226,150,0.07) 14deg, transparent 42deg, transparent 180deg, rgba(255,226,150,0.05) 196deg, transparent 222deg); animation: mzsSpin 80s linear infinite; display: none; -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 55%); mask-image: radial-gradient(circle, #000 0%, transparent 55%); }
   .mizan-lock__vignette { z-index: -1; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,0.65) 100%); }
   .mizan-lock__seal { position: relative; width: 132px; height: 132px; margin-bottom: 14px; }
   .mizan-lock__sealsvg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 14px rgba(212,175,55,0.35)); transition: filter 0.4s ease; }
@@ -2382,19 +2382,26 @@ function EpiStrip({ color, facts, note }) {
 }
 /* ===== Shared rich renderers: definition list (BP classes etc.) and the A-C-D treatment guide ===== */
 function MzDefList({ c, items, colors }) {
+    /* One unified panel, not a stack of boxes: short definitions read as a lead-in term followed by the text on the same line; long ones put the term above. Rows are divided by hairlines and carry a small coloured marker. */
     const E = React.createElement, rich = (t) => (typeof _mzRich === "function" ? _mzRich(t) : t);
     const acc = (typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c)) ? c : "#38bdf8";
-    return E("div", { "data-mzdef": "1", style: { display: "flex", flexDirection: "column", gap: 7, margin: "4px 0 14px" } }, items.map((it, i) => {
-        const col = (colors && colors[i]) || acc, label = it[0];
+    const rows = items.map((it, i) => {
+        const col = (colors && colors[i]) || acc, label = String(it[0]);
         let text = String(it[1]).replace(/^\s*[\u2014\u2013-]\s*/, ""), val = null;
         const m = /^((?:under |above |over |systolic |diastolic |less than |at least )?[<>\u2264\u2265~]?\s?\d[^.]{0,46}?)\.\s+(.+)$/.exec(text);
-        if (m && String(label).length <= 30) { val = m[1]; text = m[2]; }
-        return E("div", { key: i, style: { position: "relative", background: "linear-gradient(135deg, " + col + "16, " + col + "06)", border: "1px solid " + col + "30", borderLeft: "3px solid " + col, borderRadius: 11, padding: "9px 12px 10px", minWidth: 0 } },
-            E("div", { style: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 9px", marginBottom: text ? 4 : 0 } },
-                E("span", { style: { fontSize: 13, fontWeight: 800, color: col, letterSpacing: "0.01em", lineHeight: 1.35 } }, label),
-                val && E("span", { style: { fontSize: 12.5, fontWeight: 800, color: "#f1f5f9", background: col + "26", border: "1px solid " + col + "55", borderRadius: 999, padding: "1px 10px", lineHeight: 1.5, fontVariantNumeric: "tabular-nums" } }, val)),
-            text && E("div", { style: { fontSize: 12.8, color: "#aab5c7", lineHeight: 1.62 } }, rich(text)));
-    }));
+        if (m && label.length <= 30) { val = m[1]; text = m[2]; }
+        return { col, label, text, val, inline: !val && text.length <= 150 && label.length <= 44 };
+    });
+    return E("div", { "data-mzdef": "1", style: { margin: "6px 0 16px", padding: "2px 14px", borderRadius: 14, background: "linear-gradient(160deg, " + acc + "0d, rgba(255,255,255,0.015))", border: "1px solid " + acc + "26", borderLeft: "3px solid " + acc + "aa" } }, rows.map((r, i) =>
+        E("div", { key: i, style: { padding: "11px 0 11px 14px", position: "relative", borderTop: i ? "1px solid rgba(255,255,255,0.065)" : "none", minWidth: 0 } },
+            E("span", { "aria-hidden": "true", style: { position: "absolute", left: 0, top: 18, width: 6, height: 6, transform: "rotate(45deg)", background: r.col, boxShadow: "0 0 8px " + r.col + "88", borderRadius: 1 } }),
+            r.inline
+                ? E("div", { style: { fontSize: 13.6, lineHeight: 1.72, color: "#b4bfd0" } }, E("span", { style: { fontWeight: 800, color: r.col, letterSpacing: "0.01em" } }, r.label), E("span", { style: { color: "#4b5568", margin: "0 8px" } }, "\u2014"), rich(r.text))
+                : E("div", null,
+                    E("div", { style: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px 9px", marginBottom: r.text ? 5 : 0 } },
+                        E("span", { style: { fontSize: 13.8, fontWeight: 800, color: r.col, letterSpacing: "0.01em", lineHeight: 1.35 } }, r.label),
+                        r.val && E("span", { style: { fontSize: 12.5, fontWeight: 800, color: "#f1f5f9", background: r.col + "26", border: "1px solid " + r.col + "55", borderRadius: 999, padding: "1px 10px", lineHeight: 1.5, fontVariantNumeric: "tabular-nums" } }, r.val)),
+                    r.text && E("div", { style: { fontSize: 13.4, color: "#aab5c7", lineHeight: 1.72 } }, rich(r.text))))));
 }
 function MzDrugKey() {
     const E = React.createElement;
@@ -14193,7 +14200,7 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             border: `1px solid ${color || AC}33`, marginRight: 5, marginBottom: 5, fontFamily: FF2 } }, text));
     const Drug = ({ c, children }) => (React.createElement("span", { style: { color: c || AC, fontWeight: 600, letterSpacing: "0.03em", fontVariant: "small-caps", fontSize: "1.02em", borderBottom: `1.5px solid ${c || AC}66`, paddingBottom: "0.5px" } }, children));
     const Warn = ({ children }) => (React.createElement("div", { style: { background: "rgba(255,77,109,0.08)", border: "1px solid rgba(255,77,109,0.25)",
-            borderLeft: "3px solid #ff4d6d", borderRadius: 10, padding: "9px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ff4d6d", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, "\u26A0 CRITICAL"), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
+            borderLeft: "3px solid #ff4d6d", borderRadius: 10, padding: "9px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ff4d6d", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, "\u26A0 CRITICAL"), React.createElement("div", { style: { fontSize: 13.6, color: "#bdc6d4", lineHeight: 1.72, fontFamily: FF2 } }, children)));
     const Tip = ({ children }) => (React.createElement("div", { style: { background: "rgba(255,213,0,0.06)", border: "1px solid rgba(255,213,0,0.18)",
             borderLeft: "3px solid #ffd100", borderRadius: 10, padding: "8px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ffd100", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, "\uD83D\uDCA1 PEARL"), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
     const Mnem = ({ title, items }) => (React.createElement("div", { style: { background: "rgba(255,77,109,0.06)", border: "1px solid rgba(255,77,109,0.2)",
@@ -15636,21 +15643,40 @@ function _STK_Nihss() {
 function _STK_Aspects() {
     const E = React.createElement, [lost, setLost] = React.useState({}), A = "#38bdf8";
     const tog = id => () => setLost(o => Object.assign({}, o, { [id]: !o[id] })), n = Object.values(lost).filter(Boolean).length, sc = 10 - n;
-    const band = sc >= 8 ? ["Small core", "#4ade80", "Best outcomes; thrombolysis and thrombectomy are well supported."] : sc >= 6 ? ["Moderate core", "#fbbf24", "Thrombectomy criteria were met in the early-window trials (ASPECTS 6 or more); a thrombolysis decision is based on time and clinical status, not ASPECTS alone."] : sc >= 3 ? ["Large core", "#fb923c", "Thrombectomy still helped in SELECT2, ANGEL-ASPECT, RESCUE-Japan LIMIT and TENSION (ASPECTS 3\u20135), with more disability but more independence than medical care."] : ["Very large core", "#ef4444", "ASPECTS 0\u20132 was largely excluded from trials; reperfusion is unlikely to help, and haemorrhagic transformation risk is high."];
-    const cx = 40, cy = 118, Ro = 112, Ri = 92;
-    const reg = (id, lab, d, x, y, k) => E("g", { key: k || id, onClick: tog(id), style: { cursor: "pointer" } }, E("path", { d, fill: lost[id] ? "#ef4444" : "#334155", opacity: lost[id] ? 0.9 : 0.55, stroke: "#0b0b10", strokeWidth: 1.5, style: { transition: "all .2s" } }), E("text", { x, y, textAnchor: "middle", fontSize: 10, fontWeight: 900, fill: "#fff", style: { pointerEvents: "none", fontFamily: _STK_F, paintOrder: "stroke", stroke: "#0b0b10", strokeWidth: 2.5 } }, lab));
-    const slice = (title, cortex, deep) => E("div", { key: title, style: { flex: "1 1 150px", minWidth: 0 } }, E("div", { style: { fontSize: 9.5, fontWeight: 800, letterSpacing: "0.1em", color: "#94a3b8", textAlign: "center", marginBottom: 3, fontFamily: _STK_F } }, title),
-        E("svg", { viewBox: "0 0 170 236", style: { width: "100%", height: "auto", display: "block", background: "#0a0c11", border: "1px solid #1d2230", borderRadius: 12 } }, E("path", { d: "M40 6 A112 112 0 0 1 40 230", fill: "#1a1f2b", stroke: "#475569", strokeWidth: 1 }), cortex, deep, E("line", { x1: 40, y1: 6, x2: 40, y2: 230, stroke: "#fbbf24", strokeDasharray: "4 4", opacity: 0.4 })));
-    const ang = (a) => [cx + 102 * Math.cos(a * Math.PI / 180), cy + 102 * Math.sin(a * Math.PI / 180)];
-    const lab = (a, r) => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180) + 3];
-    const cortexA = [reg("M1", "M1", _stkArc(cx, cy, Ri, Ro, -88, -36), lab(-62, 102)[0], lab(-62, 102)[1]), reg("M2", "M2", _stkArc(cx, cy, Ri, Ro, -34, 26), lab(-4, 102)[0], lab(-4, 102)[1]), reg("M3", "M3", _stkArc(cx, cy, Ri, Ro, 28, 88), lab(58, 102)[0], lab(58, 102)[1]), reg("I", "I", _stkArc(cx, cy, 72, 84, -40, 30), lab(-5, 78)[0], lab(-5, 78)[1])];
-    const deepA = [reg("L", "L", "M92 78 C112 84 116 150 92 158 C78 150 76 86 92 78Z", 94, 122), reg("IC", "IC", "M72 74 C62 100 64 136 76 164 L84 160 C74 134 72 102 80 78Z", 70, 122), reg("C", "C", "M52 52 C70 46 78 66 66 78 C54 80 46 66 52 52Z", 62, 66)];
-    const cortexB = [reg("M4", "M4", _stkArc(cx, cy, 70, Ro, -88, -36), lab(-62, 92)[0], lab(-62, 92)[1], "M4"), reg("M5", "M5", _stkArc(cx, cy, 70, Ro, -34, 26), lab(-4, 92)[0], lab(-4, 92)[1], "M5"), reg("M6", "M6", _stkArc(cx, cy, 70, Ro, 28, 88), lab(58, 92)[0], lab(58, 92)[1], "M6")];
+    const band = sc >= 8 ? ["Small core", "#4ade80", "Best outcomes; thrombolysis and thrombectomy are well supported."] : sc >= 6 ? ["Moderate core", "#fbbf24", "ASPECTS 6 or more met the thrombectomy criteria of the early-window trials. Lysis depends on time and the deficit, not ASPECTS alone."] : sc >= 3 ? ["Large core", "#fb923c", "Thrombectomy still helped at ASPECTS 3\u20135 (SELECT2, ANGEL-ASPECT, RESCUE-Japan LIMIT, TENSION): more disability, but more independence than medical care."] : ["Very large core", "#ef4444", "ASPECTS 0\u20132 was largely excluded from trials; reperfusion is unlikely to help and the bleeding risk is high."];
+    const CX = 100, CY = 112, K = 1.15, P = (r, a) => [CX + r * Math.cos(a * Math.PI / 180), CY + K * r * Math.sin(a * Math.PI / 180)];
+    const arc = (r1, r2, a0, a1) => { const p = (r, a) => [r * Math.cos(a * Math.PI / 180), r * Math.sin(a * Math.PI / 180)], A1 = p(r2, a0), B = p(r2, a1), C = p(r1, a1), D = p(r1, a0); return "M" + A1[0].toFixed(1) + " " + A1[1].toFixed(1) + " A" + r2 + " " + r2 + " 0 0 1 " + B[0].toFixed(1) + " " + B[1].toFixed(1) + " L" + C[0].toFixed(1) + " " + C[1].toFixed(1) + " A" + r1 + " " + r1 + " 0 0 0 " + D[0].toFixed(1) + " " + D[1].toFixed(1) + "Z"; };
+    const fillOf = id => lost[id] ? "#ef4444" : "#3a4a63", halo = { pointerEvents: "none", fontFamily: _STK_F, fontWeight: 900, fill: "#fff", paintOrder: "stroke", stroke: "#0b0b10", strokeWidth: 2.6, strokeLinejoin: "round" };
+    const lab = (id, x, y, fs) => E("text", { key: "t" + id, x, y: y + 3.5, textAnchor: "middle", fontSize: fs || 10, style: halo }, id);
+    const rg = (id, shape, x, y, fs) => E("g", { key: id, onClick: tog(id), style: { cursor: "pointer" } }, shape(id), lab(id, x, y, fs));
+    const sec = (r1, r2, a0, a1) => id => E("g", { transform: "translate(" + CX + " " + CY + ") scale(1 " + K + ")" }, E("path", { d: arc(r1, r2, a0, a1), fill: fillOf(id), stroke: "#0b0b10", strokeWidth: 1.4, style: { transition: "fill .2s" } }));
+    const shp = d => id => E("path", { d, fill: fillOf(id), stroke: "#0b0b10", strokeWidth: 1.4, style: { transition: "fill .2s" } });
+    const ell = (cx, cy, rx, ry) => id => E("ellipse", { cx, cy, rx, ry, fill: fillOf(id), stroke: "#0b0b10", strokeWidth: 1.4, style: { transition: "fill .2s" } });
+    const lm = (a, r) => P(r, a);
+    const ghost = (kids) => E("g", { opacity: 0.2, style: { pointerEvents: "none" } }, kids);
+    const brain = E("g", { key: "br" }, E("ellipse", { cx: CX, cy: CY, rx: 94, ry: 108, fill: "#10141c", stroke: "#4b5870", strokeWidth: 1.6 }), E("path", { d: "M100 6 L100 218", stroke: "#fbbf24", strokeWidth: 1, strokeDasharray: "4 4", opacity: 0.45 }));
+    const outline = (r1, r2, key) => E("g", { key, transform: "translate(" + CX + " " + CY + ") scale(1 " + K + ")" }, [[-85, -38], [-36, 24], [26, 85]].map((x, i) => E("path", { key: i, d: arc(r1, r2, x[0], x[1]), fill: "#3a4a63", stroke: "#0b0b10", strokeWidth: 1.2 })));
+    const lft = (inner) => E("g", { key: "lf", transform: "translate(200 0) scale(-1 1)" }, ghost(inner));
+    const sliceA = E("svg", { viewBox: "0 0 200 224", style: { width: "100%", height: "auto", display: "block", background: "#0a0c11", border: "1px solid #1d2230", borderRadius: 14 } }, brain,
+        lft([outline(70, 88, "o1"), E("ellipse", { key: "o2", cx: 140, cy: 112, rx: 12, ry: 24, fill: "#3a4a63" })]),
+        rg("M1", sec(70, 88, -85, -38), lm(-61, 79)[0], lm(-61, 79)[1]), rg("M2", sec(70, 88, -36, 24), lm(-6, 79)[0], lm(-6, 79)[1]), rg("M3", sec(70, 88, 26, 85), lm(56, 79)[0], lm(56, 79)[1]),
+        rg("I", sec(56, 66, -34, 24), lm(-5, 61)[0], lm(-5, 61)[1], 9),
+        rg("L", ell(140, 112, 12, 24), 140, 112, 10),
+        rg("IC", shp("M118 92 C116 108 118 126 124 142 L130 139 C125 124 123 108 125 92Z"), 118, 117, 8),
+        rg("C", ell(112, 76, 9, 14), 112, 76, 9),
+        E("ellipse", { key: "th", cx: 114, cy: 140, rx: 8, ry: 12, fill: "none", stroke: "#64748b", strokeDasharray: "3 3", style: { pointerEvents: "none" } }),
+        E("text", { key: "thl", x: 102, y: 168, textAnchor: "middle", fontSize: 7, fill: "#64748b", style: { pointerEvents: "none", fontFamily: _STK_F } }, "thalamus"));
+    const sliceB = E("svg", { viewBox: "0 0 200 224", style: { width: "100%", height: "auto", display: "block", background: "#0a0c11", border: "1px solid #1d2230", borderRadius: 14 } }, brain,
+        lft([outline(44, 88, "p1")]),
+        rg("M4", sec(44, 88, -85, -38), lm(-61, 66)[0], lm(-61, 66)[1]), rg("M5", sec(44, 88, -36, 24), lm(-6, 66)[0], lm(-6, 66)[1]), rg("M6", sec(44, 88, 26, 85), lm(56, 66)[0], lm(56, 66)[1]),
+        E("path", { key: "vent", d: "M108 76 C124 82 126 118 112 136 C106 124 104 100 108 76Z", fill: "#05070b", stroke: "#2a3342", style: { pointerEvents: "none" } }),
+        E("text", { key: "vl", x: 118, y: 160, textAnchor: "middle", fontSize: 7, fill: "#64748b", style: { pointerEvents: "none", fontFamily: _STK_F } }, "ventricle"));
+    const slice = (t, svg, k) => E("div", { key: k, style: { flex: "1 1 0", minWidth: 0 } }, E("div", { style: { fontSize: 9.5, fontWeight: 800, letterSpacing: "0.1em", color: "#94a3b8", textAlign: "center", marginBottom: 4, fontFamily: _STK_F } }, t), svg);
     return E(_PX_Collapse, { icon: "\uD83E\uDDE9", title: "ASPECTS: early CT change in the MCA territory", sub: "Tap each region with early hypodensity \u00B7 10 minus the number lost", color: A, v: sc, max: 10, vcol: band[1], vlabel: "/10" },
-        E("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", margin: "8px 0" } }, E("span", { style: { fontSize: 11, color: "#8a97ad", lineHeight: 1.5, fontFamily: _STK_F } }, "Two axial slices of ONE hemisphere. Red = hypodense or swollen."), E("button", { onClick: () => setLost({}), style: { fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: A, background: "transparent", border: "1px solid " + A + "55", borderRadius: 8, padding: "4px 11px", cursor: "pointer", fontFamily: _STK_F } }, "RESET")),
-        E("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } }, slice("BASAL GANGLIA LEVEL", cortexA, deepA), slice("SUPRAGANGLIONIC LEVEL", cortexB, null)),
-        E("div", { style: { fontSize: 11, color: "#94a3b8", lineHeight: 1.6, margin: "8px 0 2px", fontFamily: _STK_F } }, "C caudate \u00B7 L lentiform \u00B7 IC internal capsule \u00B7 I insular ribbon \u00B7 M1 anterior, M2 lateral (at insula), M3 posterior MCA cortex \u00B7 M4, M5, M6 the same three, just above the ganglionic level."),
-        E(_PX_Verdict, { color: band[1], head: "ASPECTS " + sc + " \u00B7 " + band[0], text: band[2] }));
+        E("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, margin: "8px 0 4px" } }, E("span", { style: { fontSize: 11, color: "#8a97ad", lineHeight: 1.45, fontFamily: _STK_F } }, "Result updates here, above the scans. Slices show one hemisphere; red = hypodense."), E("button", { onClick: () => setLost({}), style: { fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", color: A, background: "transparent", border: "1px solid " + A + "55", borderRadius: 8, padding: "5px 11px", cursor: "pointer", fontFamily: _STK_F, flexShrink: 0 } }, "RESET")),
+        E(_PX_Verdict, { color: band[1], head: "ASPECTS " + sc + " \u00B7 " + band[0] + (n ? " \u00B7 " + Object.keys(lost).filter(k => lost[k]).join(", ") : ""), text: band[2] }),
+        E("div", { style: { display: "flex", gap: 8, marginTop: 8 } }, slice("GANGLIONIC LEVEL", sliceA, "a"), slice("ABOVE GANGLIA", sliceB, "b")),
+        E("div", { style: { fontSize: 11, color: "#94a3b8", lineHeight: 1.6, margin: "9px 0 0", fontFamily: _STK_F } }, "C caudate \u00B7 L lentiform \u00B7 IC internal capsule \u00B7 I insular ribbon \u00B7 M1 anterior, M2 lateral, M3 posterior MCA cortex at the ganglionic level \u00B7 M4, M5, M6 the same three, 2 cm higher. The thalamus is not scored. For the left hemisphere, mirror the picture."));
 }
 
 /* ---------- 5. ABCD2 ---------- */
@@ -15797,16 +15823,14 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
         return (React.createElement("div", { style: { position: "relative", margin: "26px 0 14px", paddingLeft: 2 } }, icon && React.createElement("div", { style: { position: "absolute", left: -4, top: -20, fontSize: 46, opacity: 0.09, lineHeight: 1, pointerEvents: "none" } }, icon), React.createElement("div", { style: { position: "relative", fontSize: 15.5, fontWeight: 700, color: "#f1f5f9", fontFamily: "'Playfair Display',Georgia,serif", paddingLeft: 14 } }, children)));
     };
 const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: { display: "contents" } }, React.createElement(_mzRawH_SubHead, p));
-    const Box = ({ c, title, children }) => (React.createElement("div", { style: { background: S3, border: `1px solid ${c || BOR}`, borderLeft: `3px solid ${c || AC}`,
-            borderRadius: 10, padding: "13px 15px", marginBottom: 12, position: "relative", overflow: "hidden" } }, React.createElement("div", { style: { position: "absolute", top: 0, left: 3, bottom: 0, width: 40,
-            background: `linear-gradient(90deg,${c || AC}10,transparent)`, pointerEvents: "none" } }), title && React.createElement("div", { style: { fontSize: 10, fontWeight: 700, color: c || AC, marginBottom: 6,
-            letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: FF2 } }, title), React.createElement("div", { style: { fontSize: 13, color: TX2, lineHeight: 1.75, fontFamily: FF2, position: "relative" } }, children)));
+    const Box = ({ c, title, children }) => (React.createElement("div", { style: { background: `linear-gradient(150deg, ${c || AC}12 0%, rgba(12,13,18,0.9) 55%)`, border: `1px solid ${(c || AC)}30`, borderLeft: `3px solid ${c || AC}`,
+            borderRadius: 14, padding: "14px 16px 15px", marginBottom: 14, position: "relative", overflow: "hidden" } }, title && React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 9, marginBottom: 8 } }, React.createElement("span", { style: { fontSize: 10.5, fontWeight: 800, color: c || AC, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: FF2 } }, title), React.createElement("span", { style: { flex: 1, height: 1, background: `linear-gradient(90deg, ${(c || AC)}66, transparent)` } })), React.createElement("div", { style: { fontSize: 14, color: "#b9c3d3", lineHeight: 1.8, fontFamily: FF2, position: "relative" } }, children)));
     const Row = ({ label, val }) => (React.createElement("div", { style: {
             position: "relative", marginBottom: 9, padding: "12px 14px",
             background: `linear-gradient(135deg, ${AC}10, ${S3})`,
             border: `1px solid ${AC}2a`, borderLeft: `3px solid ${AC}`,
             borderRadius: 12,
-        } }, React.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 } }, React.createElement("span", { style: { color: AC, fontSize: 9.5, flexShrink: 0 } }, "\u25C6"), React.createElement("span", { style: { fontSize: 13.5, fontWeight: 800, color: AC, fontFamily: FF2, letterSpacing: "0.015em", lineHeight: 1.35 } }, label)), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.75, fontFamily: FF2 } }, _mzRich(val))));
+        } }, React.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 } }, React.createElement("span", { style: { color: AC, fontSize: 9.5, flexShrink: 0 } }, "\u25C6"), React.createElement("span", { style: { fontSize: 13.5, fontWeight: 800, color: AC, fontFamily: FF2, letterSpacing: "0.015em", lineHeight: 1.35 } }, label)), React.createElement("div", { style: { fontSize: 13.6, color: "#b4bfd0", lineHeight: 1.76, fontFamily: FF2 } }, _mzRich(val))));
     const PillarCard = ({ n, total, title, body, color, icon }) => (React.createElement("div", { style: { position: "relative", display: "flex", gap: 7, marginBottom: n < total ? 3 : 12 } }, n < total && (React.createElement("div", { style: {
             position: "absolute", left: 9, top: 24, bottom: -3, width: 2,
             background: `linear-gradient(${color}, ${BOR})`, opacity: 0.5,
@@ -15822,9 +15846,9 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
             border: `1px solid ${color}38`, borderRadius: 13,
         } }, React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 7, marginBottom: 6 } }, icon && React.createElement("span", { style: { fontSize: 14 } }, icon), React.createElement("div", { style: { fontSize: 13.5, fontWeight: 800, color: TX, fontFamily: FF2, lineHeight: 1.35 } }, title)), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.75, fontFamily: FF2 } }, body))));
     const Warn = ({ title, children }) => (React.createElement("div", { style: { background: "rgba(255,77,109,0.08)", border: "1px solid rgba(255,77,109,0.25)",
-            borderLeft: "3px solid #ff4d6d", borderRadius: 10, padding: "9px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ff4d6d", letterSpacing: "0.1em", marginBottom: 3, fontFamily: FF2 } }, title || "CRITICAL"), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
+            borderLeft: "3px solid #ff4d6d", borderRadius: 14, padding: "12px 15px", marginBottom: 12 } }, React.createElement("div", { style: { fontSize: 10.5, fontWeight: 800, color: "#ff4d6d", letterSpacing: "0.14em", marginBottom: 5, fontFamily: FF2 } }, title || "CRITICAL"), React.createElement("div", { style: { fontSize: 13.6, color: "#c0c9d6", lineHeight: 1.72, fontFamily: FF2 } }, children)));
     const Tip = ({ children }) => (React.createElement("div", { style: { background: "rgba(255,213,0,0.06)", border: "1px solid rgba(255,213,0,0.2)",
-            borderLeft: "3px solid #ffd100", borderRadius: 10, padding: "8px 12px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: "#ffd100", marginBottom: 3, fontFamily: FF2 } }, "PEARL"), React.createElement("div", { style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2 } }, children)));
+            borderLeft: "3px solid #ffd100", borderRadius: 14, padding: "12px 15px", marginBottom: 12 } }, React.createElement("div", { style: { fontSize: 10.5, fontWeight: 800, color: "#ffd100", letterSpacing: "0.14em", marginBottom: 5, fontFamily: FF2 } }, "PEARL"), React.createElement("div", { style: { fontSize: 13.6, color: "#c0c9d6", lineHeight: 1.72, fontFamily: FF2 } }, children)));
     const Mnem = ({ title, items }) => (React.createElement("div", { style: { background: "rgba(179,136,255,0.06)", border: "1px solid rgba(179,136,255,0.2)",
             borderRadius: 10, padding: "10px 13px", marginBottom: 8 } }, React.createElement("div", { style: { fontSize: 10, fontWeight: 800, color: AC, letterSpacing: "0.1em", marginBottom: 6, fontFamily: FF2 } }, "MNEMONIC \u2014 ", title), items.map((item, i) => {
         const split = item.indexOf("—");
@@ -15842,7 +15866,9 @@ const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: {
         const rest = chk ? raw.trim().slice(1).trim() : val;
         return (React.createElement("div", { key: j, style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, marginTop: 4 } }, React.createElement("span", { style: { color: AC, fontWeight: 700, fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.05em" } }, headers[j + 1], "  "), chk && React.createElement("span", { style: { color: positive ? "#4ade80" : "#7a8496", fontWeight: 700 } }, positive ? "✓ " : "✗ "), rest));
     }))))));
-    const List = ({ c, items }) => (React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 } }, items.map((item, i) => (React.createElement("div", { key: i, style: { fontSize: 12.5, color: TX2, lineHeight: 1.6, fontFamily: FF2, display: "flex", gap: 7 } }, React.createElement("span", { style: { color: c || AC, flexShrink: 0 } }, (_mzIsSmart(item) ? "" : "\u2022")), React.createElement("span", { style: { flex: 1, minWidth: 0 } }, _mzSmartItem(item, c || AC)))))));
+    const _cnsLead = (t) => { if (typeof t !== "string") return null; const mm = /^([^:\u2014]{3,64}?)(?::\s|\s\u2014\s)(.+)$/.exec(t); if (!mm || mm[1].split(/\s+/).length > 9 || /[.;]$/.test(mm[1])) return null; return [mm[1], mm[2]]; };
+    const _cnsBody = (t, c) => { if (typeof t !== "string") return t; const parts = t.split(/(\b[A-Z][A-Z0-9\u2082\u2019'\/-]{2,}\b|\b\d[\d.,\u2013\-]*\s?(?:%|mL|mmHg|mg|kg|mmol\/L|mg\/dL|h|hours?|min|minutes?|days?|weeks?|months?|years?)\b)/g); return parts.map((p, i) => i % 2 ? React.createElement("span", { key: i, style: { fontWeight: 700, color: /^\d/.test(p) ? "#f1f5f9" : (c || AC), fontVariantNumeric: "tabular-nums", letterSpacing: /^\d/.test(p) ? 0 : "0.02em" } }, p) : p); };
+    const List = ({ c, items }) => (React.createElement("div", { style: { position: "relative", display: "flex", flexDirection: "column", gap: 11, margin: "4px 0 16px", padding: "2px 0 2px 20px" } }, React.createElement("div", { "aria-hidden": "true", style: { position: "absolute", left: 3, top: 8, bottom: 8, width: 2, borderRadius: 2, background: `linear-gradient(180deg, ${c || AC}88, ${c || AC}11)` } }), items.map((item, i) => { const sm = _mzIsSmart(item), ld = sm ? null : _cnsLead(item); return React.createElement("div", { key: i, style: { position: "relative", fontSize: 14, color: "#b4bfd0", lineHeight: 1.76, fontFamily: FF2 } }, React.createElement("span", { "aria-hidden": "true", style: { position: "absolute", left: -20, top: 10, width: 8, height: 8, borderRadius: 2, transform: "rotate(45deg)", background: c || AC, boxShadow: `0 0 0 3px ${(c || AC)}22, 0 0 10px ${(c || AC)}66` } }), sm ? _mzSmartItem(item, c || AC) : (ld ? [React.createElement("span", { key: "l", style: { fontWeight: 800, color: "#eef2f8", letterSpacing: "0.005em" } }, ld[0]), React.createElement("span", { key: "s", style: { color: c || AC, margin: "0 7px", fontWeight: 700 } }, "\u203A"), _cnsBody(ld[1], c)] : _cnsBody(item, c))); })));
     const XLink = ({ topicId, moduleId, tabId, children }) => (React.createElement("button", { onClick: () => onJump && onJump({ topicId, moduleId, tabId }), style: {
             display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: 5, maxWidth: "100%",
             background: `${AC}16`, border: `1px solid ${AC}4a`, borderRadius: 20,
@@ -77539,6 +77565,7 @@ const H = (p) => React.createElement("div", { "data-mz-sub": "H", style: { displ
             icon && React.createElement("span", { style: { marginRight: 6 } }, icon),
             children),
         React.createElement("div", { style: { flex: 1, height: 1, background: `linear-gradient(90deg, ${c || AC}55, transparent)` } })));
+const Table = (p) => React.createElement(MzTbl, { c: p.c || AC, headers: p.headers, rows: p.rows, TX: TX, TX2: TX2, BOR: BOR, FF2: FF2, wrap: (k) => React.createElement(Box, { color: p.c || AC }, k), legacy: () => null });
 const SubHead = (p) => React.createElement("div", { "data-mz-sub": "S", style: { display: "contents" } }, React.createElement(_mzRawH_SubHead, p));
     const content = {
         anatomy: (React.createElement("div", null,
@@ -112932,7 +112959,7 @@ function lockPatternSVG(strokeColor, opacity, size) {
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${s}' height='${s}'><g stroke='${strokeColor}' stroke-width='0.8' fill='none' opacity='${opacity}'><path d='${star}'/><path d='${oct}'/><circle cx='${h}' cy='${h}' r='${(ir * 0.48).toFixed(2)}'/><circle cx='${h}' cy='${h}' r='${(r * 1.02).toFixed(2)}' stroke-dasharray='1.5 4'/><line x1='0' y1='${h}' x2='${s}' y2='${h}'/><line x1='${h}' y1='0' x2='${h}' y2='${s}'/><line x1='0' y1='0' x2='${s}' y2='${s}'/><line x1='${s}' y1='0' x2='0' y2='${s}'/></g></svg>`;
     return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
-const LOCK_PAT_A = lockPatternSVG("#d4af37", 0.30, 80), LOCK_PAT_B = lockPatternSVG("#f1d98f", 0.13, 160);
+const LOCK_PAT_A = lockPatternSVG("#a8893a", 0.11, 80), LOCK_PAT_B = lockPatternSVG("#a8893a", 0.045, 160);
 function PasscodeGate({ onUnlock }) {
     const [digits, setDigits] = useState([]);
     const [shake, setShake] = useState(false);
